@@ -18,6 +18,9 @@ roundBracketO		= \(
 roundBracketC		= \)
 doubleQuote		= \"
 exclamationMark		= \!
+equal			= "="|["="]+
+dash			= -|[-]+
+hash			= #
 
 
 %%
@@ -34,8 +37,9 @@ exclamationMark		= \!
 {roundBracketC}		{System.out.printf("ROUNDBRACKETC Found [%s]\n",yytext());}
 {doubleQuote}		{System.out.printf("DOUBLEQUOTE Found [%s]\n",yytext());}
 {exclamationMark}	{System.out.printf("EXCLAMATIONMARK Found [%s]\n",yytext());}
-
-
+{equal}			{System.out.printf("EQUAL Found [%s]\n",yytext());}
+{dash}			{System.out.printf("DASH Found [%s]\n",yytext());}
+{hash}			{System.out.printf("HASH Found [%s]\n",yytext());}
 
 {nl}			{System.out.printf("New Line\n");}
 //[^"*"]		{System.out.printf("Error [%s]\n",yytext());}
