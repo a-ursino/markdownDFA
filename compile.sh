@@ -1,6 +1,12 @@
 #!/bin/bash
-echo "Compile and run scanner file."
 
-jflex scanner.jflex
-javac lexer.java
-java  lexer src.txt
+if [ "$1" = "run" ]; then
+	echo "run only"
+	java  lexer src.txt
+else
+	echo "compile and run"
+	jflex scanner.jflex
+	javac lexer.java
+	java  lexer src.txt
+
+fi
