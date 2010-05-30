@@ -6,6 +6,7 @@
 %standalone
 
 nl			= \n|\r|\r\n
+tab			= \t
 space			= " "
 string			= [a-zA-Z0-9.,;:]+
 star			= \*
@@ -48,6 +49,8 @@ schema            = http|ftp|gopher|https|nntp|file
 {equal}			{System.out.printf("EQUAL Found [%s]\n",yytext());}
 {dash}			{System.out.printf("DASH Found [%s]\n",yytext());}
 {hash}			{System.out.printf("HASH Found [%s]\n",yytext());}
+{tab}			{System.out.printf("TAB Found [%s]\n",yytext());}
+
 
 {schema}"://"({domain}|{ipaddress})(":"{port})?("/"{name})*("/"|("/"{name}"."{name} ("#"{name})?))? 
                          {System.out.printf("URL found [%s]\n",yytext());}
