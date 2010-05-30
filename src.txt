@@ -1,0 +1,12 @@
+*italico1*
+*italico1 italicoBis*
+*italico1 
+italicoBis*
+_italico2_
+_italico2 italicoBis_
+_italico2 
+italicoBis_
+**bold1**
+**bold1 boldBis**
+__bold2__
+__bold2 boldBis__
