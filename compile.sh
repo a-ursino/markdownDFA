@@ -6,7 +6,6 @@ if [ "$1" = "run" ]; then
 else
 	echo "compile and run"
 	jflex scanner.jflex
-	javac lexer.java
-	java  lexer src.txt
-
+	java  java_cup.Main parser.cup
+	java  Main src.txt
 fi
