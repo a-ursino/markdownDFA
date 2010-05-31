@@ -42,7 +42,8 @@ exclamationMark		= \!
 equal			= (\=)+
 dash			= (\-)+
 hash			= #
-char 			= [a-zA-Z]
+char 			= [^ \\\`\*\_\{\}\[\]\(\)\#\+\-\.\!\"\ \" ]
+charM			= {char}+
 
 ipaddresscomp		= [0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5]
 port			= [1-9][0-9]{0,3}
@@ -54,6 +55,7 @@ domain            = {name}.{name}(.{name})*.{primelevel}
 schema            = http|ftp|gopher|https|nntp|file
 
 %xstate STRINGSTATE
+
 
 %%
 
@@ -83,11 +85,26 @@ schema            = http|ftp|gopher|https|nntp|file
 
 {char}				{yybegin(STRINGSTATE);bufferStr.setLength(0);bufferStr.append(yytext());}
 
+
 <STRINGSTATE>{
+{charM}				{if(_DEBUG){System.out.printf("CHARM Found [%s]\n",yytext());}
+					bufferStr.append(yytext());}
+
+"\*"    			{if(_DEBUG){System.out.printf("ESCAPE * Found [%s]\n",yytext());}
+					bufferStr.append(yytext());}
 
 
 
+\* Ê Ê Ê Ê Ê Ê Ê	{if(_DEBUG){System.out.printf("STAR Found [%s]\n",yytext());} 
+					yybegin(YYINITIAL); 
+ Ê Ê Ê Ê Ê Ê Ê Ê Ê Êreturn symbol(sym.STRING, bufferStr.toString());
+ Ê Ê Ê Ê Ê Ê Ê Ê Ê Êreturn symbol(sym.STAR) }
+
+Ê" " Ê Ê Ê Ê Ê Ê    { yybegin(YYINITIAL);
+ Ê Ê Ê Ê Ê Ê Ê Ê Ê Êreturn symbol(sym.STRING, bufferStr.toString());
+ Ê Ê Ê Ê Ê Ê Ê Ê Ê Êreturn symbol(sym.SPACE)}
 }
+
 
 {schema}"://"({domain}|{ipaddress})(":"{port})?("/"{name})*("/"|("/"{name}"."{name} ("#"{name})?))? 
                          {if(_DEBUG){System.out.printf("URL Found [%s]\n",yytext());}
