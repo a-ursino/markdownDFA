@@ -23,6 +23,14 @@ equal			= "="|["="]+
 dash			= -|[-]+
 hash			= #
 
+ipaddresscomp		= [0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5]
+port			= [1-9][0-9]{0,3}
+ipaddress		= ({ipaddresscomp}.){3}{ipaddresscomp}
+escape		= %[0-9A-F][0-9A-F]
+name              = ([^\n\r%/<>:.\\#\" ]|{escape})+ 
+primelevel        = it|com|gov|edu|net|uk|fr|de|ne|jp|ch
+domain            = {name}.{name}(.{name})*.{primelevel}
+schema            = http|ftp|gopher|https|nntp|file
 
 %%
 
@@ -42,6 +50,13 @@ hash			= #
 {dash}			{System.out.printf("DASH Found [%s]\n",yytext());}
 {hash}			{System.out.printf("HASH Found [%s]\n",yytext());}
 {tab}			{System.out.printf("TAB Found [%s]\n",yytext());}
+<<<<<<< HEAD
+=======
+
+
+{schema}"://"({domain}|{ipaddress})(":"{port})?("/"{name})*("/"|("/"{name}"."{name} ("#"{name})?))? 
+                         {System.out.printf("URL found [%s]\n",yytext());}
+>>>>>>> urlScannerFeature
 
 {nl}			{System.out.printf("New Line\n");}
 //[^"*"]		{System.out.printf("Error [%s]\n",yytext());}
