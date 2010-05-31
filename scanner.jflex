@@ -42,7 +42,6 @@ exclamationMark		= \!
 equal			= (\=)+
 dash			= (\-)+
 hash			= #
-char 			= [a-zA-Z]
 
 ipaddresscomp		= [0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5]
 port			= [1-9][0-9]{0,3}
@@ -54,6 +53,7 @@ domain            = {name}.{name}(.{name})*.{primelevel}
 schema            = http|ftp|gopher|https|nntp|file
 
 
+%xstate ESCAPESTATE
 
 %%
 
@@ -77,9 +77,23 @@ schema            = http|ftp|gopher|https|nntp|file
 {dash}				{return symbol(sym.DASH);}
 {hash}				{return symbol(sym.HASH);}
 {tab}				{return symbol(sym.TAB);}
-
+*/
 {string}			{if(_DEBUG){System.out.printf("STRING Found [%s]\n",yytext());}
-*/					return symbol(sym.STRING, new String(yytext()));}
+					return symbol(sym.STRING, new String(yytext()));}
+
+
+"\"      {yybegin(ESCAPESTATE);System.out.printf("Start ESCAPESTATE\n");}
+
+<ESCAPESTATE>{
+
+"*"      			{System.out.printf("Literal Char Found [%s]",yytext());
+					yybegin(YYINITIAL);
+					return symbol(sym.LITCHAR,new Character('*'));
+					}
+
+
+}
+
 
 
 
