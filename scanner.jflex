@@ -1,11 +1,28 @@
+import java_cup.runtime.*;
 
 %%
 
-%unicode
+%public
 %class lexer
-%standalone
+%implements sym
+%unicode
 %line
 %column
+%cup
+
+%{
+  StringBuffer string = new StringBuffer();
+ 
+  private Symbol symbol(int type) {
+    return new Symbol(type, yyline+1, yycolumn+1);
+  }
+
+  private Symbol symbol(int type, Object value) {
+    return new Symbol(type, yyline+1, yycolumn+1, value);
+  }
+%}
+
+
 
 
 nl			= \n|\r|\r\n
