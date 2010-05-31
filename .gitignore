@@ -1,3 +1,6 @@
+parser.java
+parser.class
+sym.java
 lexer.java
 lexer.class
 *.class
