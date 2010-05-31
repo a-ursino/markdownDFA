@@ -10,15 +10,17 @@ parser code {:
 :};
 
 
-terminal STAR, EQUAL;
+terminal STAR, EQUAL,SPACE,NEWLINE;
 terminal String STRING, URL;
 
-non terminal file,italico;
+non terminal file,italico1;
 
 start with file;
 
+file ::=italico1 {:
+	System.out.printf("Grammar ok\n");	
+:};
 
 italico1 ::= STAR STRING:s STAR
-{:
-	System.out.printf("dddd %s",s)
-:}
+{: System.out.printf("Rule Italico1 found\n"); :}
+;

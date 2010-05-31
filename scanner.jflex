@@ -2,16 +2,16 @@ import java_cup.runtime.*;
 
 %%
 
-%public
+
 %class lexer
-%implements sym
 %unicode
 %line
 %column
 %cup
 
 %{
-  StringBuffer string = new StringBuffer();
+  private Boolean _DEBUG=true;
+  StringBuffer bufferStr = new StringBuffer();
  
   private Symbol symbol(int type) {
     return new Symbol(type, yyline+1, yycolumn+1);
@@ -42,6 +42,7 @@ exclamationMark		= \!
 equal			= (\=)+
 dash			= (\-)+
 hash			= #
+char 			= [a-zA-Z]
 
 ipaddresscomp		= [0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5]
 port			= [1-9][0-9]{0,3}
@@ -52,28 +53,45 @@ primelevel        = it|com|gov|edu|net|uk|fr|de|ne|jp|ch
 domain            = {name}.{name}(.{name})*.{primelevel}
 schema            = http|ftp|gopher|https|nntp|file
 
+%xstate STRINGSTATE
+
 %%
 
-{space}				{return symbol(SPACE);}
-{star}				{return symbol(STAR);}
-{starDouble}		{return symbol(STARDOUBLE);}
-{underscore}		{return symbol(UNDERSCORE);} 
-{underscoreDouble}	{return symbol(UNDERSCOREDOUBLE);}
-{string}			{return symbol(STRING, new String(yytext()));}
-{squareBracketO}	{return symbol(SQUAREBRACKETO);}
-{squareBracketC}	{return symbol(SQUAREBRACKETC);}
-{roundBracketO}		{return symbol(ROUNDBRACKETO);}
-{roundBracketC}		{return symbol(ROUNDBRACKETC);}
-{doubleQuote}		{return symbol(DOUBLEQUOTE);}
-{exclamationMark}	{return symbol(EXCLAMATIONMARK);}
-{equal}				{return symbol(EQUAL);}
-{dash}				{return symbol(DASH);}
-{hash}				{return symbol(HASH);}
-{tab}				{return symbol(TAB);}
+{space}				{if(_DEBUG){System.out.printf("SPACE Found [%s]\n",yytext()); }
+					return symbol(sym.SPACE);}
+{star}				{if(_DEBUG){System.out.printf("STAR Found [%s]\n",yytext());}
+					return symbol(sym.STAR);}
 
+{starDouble}		{if(_DEBUG){System.out.printf("STARDOUBLE Found [%s]\n",yytext());
+					return symbol(sym.STARDOUBLE);}
+/*
+{underscore}		{return symbol(sym.UNDERSCORE);} 
+{underscoreDouble}	{return symbol(sym.UNDERSCOREDOUBLE);}
+{squareBracketO}	{return symbol(sym.SQUAREBRACKETO);}
+{squareBracketC}	{return symbol(sym.SQUAREBRACKETC);}
+{roundBracketO}		{return symbol(sym.ROUNDBRACKETO);}
+{roundBracketC}		{return symbol(sym.ROUNDBRACKETC);}
+{doubleQuote}		{return symbol(sym.DOUBLEQUOTE);}
+{exclamationMark}	{return symbol(sym.EXCLAMATIONMARK);}
+{equal}				{return symbol(sym.EQUAL);}
+{dash}				{return symbol(sym.DASH);}
+{hash}				{return symbol(sym.HASH);}
+{tab}				{return symbol(sym.TAB);}
+
+{string}			{if(_DEBUG){System.out.printf("STRING Found [%s]\n",yytext());}
+*/					return symbol(sym.STRING, new String(yytext()));}
+
+{char}				{yybegin(STRINGSTATE);bufferStr.setLength(0);bufferStr.append(yytext());}
+
+<STRINGSTATE>{
+
+
+
+}
 
 {schema}"://"({domain}|{ipaddress})(":"{port})?("/"{name})*("/"|("/"{name}"."{name} ("#"{name})?))? 
-                         {return symbol(URL, new String(yytext()));}
+                         {if(_DEBUG){System.out.printf("URL Found [%s]\n",yytext());}
+                         return symbol(sym.URL, new String(yytext()));}
 
-{nl}			{System.out.printf("New Line\n");}
+{nl}			{return symbol(sym.NEWLINE);}
 //[^"*"]		{System.out.printf("Error [%s]\n",yytext());}
