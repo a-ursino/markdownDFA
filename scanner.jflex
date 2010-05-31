@@ -54,26 +54,26 @@ schema            = http|ftp|gopher|https|nntp|file
 
 %%
 
-{space}				{System.out.printf("SPACE Found [%s]\n",yytext());}
-{star}				{System.out.printf("STAR  Found [%s]\n",yytext());}
-{starDouble}		{System.out.printf("STARDOUBLE Found [%s]\n",yytext());}
-{underscore}		{System.out.printf("UNDERSCORE Found [%s]\n",yytext());} 
-{underscoreDouble}	{System.out.printf("UNDERSCOREDOUBLE Found [%s]\n",yytext());}
-{string}			{System.out.printf("STRING Found [%s]\n",yytext());}
-{squareBracketO}	{System.out.printf("SQUAREBRACKETO Found [%s]\n",yytext());}
-{squareBracketC}	{System.out.printf("SQUAREBRACKETC Found [%s]\n",yytext());}
-{roundBracketO}		{System.out.printf("ROUNDBRACKETO Found [%s]\n",yytext());}
-{roundBracketC}		{System.out.printf("ROUNDBRACKETC Found [%s]\n",yytext());}
-{doubleQuote}		{System.out.printf("DOUBLEQUOTE Found [%s]\n",yytext());}
-{exclamationMark}	{System.out.printf("EXCLAMATIONMARK Found [%s]\n",yytext());}
-{equal}				{System.out.printf("EQUAL Found [%s]\n",yytext());}
-{dash}				{System.out.printf("DASH Found [%s]\n",yytext());}
-{hash}				{System.out.printf("HASH Found [%s]\n",yytext());}
-{tab}				{System.out.printf("TAB Found [%s]\n",yytext());}
+{space}				{return symbol(SPACE);}
+{star}				{return symbol(STAR);}
+{starDouble}		{return symbol(STARDOUBLE);}
+{underscore}		{return symbol(UNDERSCORE);} 
+{underscoreDouble}	{return symbol(UNDERSCOREDOUBLE);}
+{string}			{return symbol(STRING, new String(yytext()));}
+{squareBracketO}	{return symbol(SQUAREBRACKETO);}
+{squareBracketC}	{return symbol(SQUAREBRACKETC);}
+{roundBracketO}		{return symbol(ROUNDBRACKETO);}
+{roundBracketC}		{return symbol(ROUNDBRACKETC);}
+{doubleQuote}		{return symbol(DOUBLEQUOTE);}
+{exclamationMark}	{return symbol(EXCLAMATIONMARK);}
+{equal}				{return symbol(EQUAL);}
+{dash}				{return symbol(DASH);}
+{hash}				{return symbol(HASH);}
+{tab}				{return symbol(TAB);}
 
 
 {schema}"://"({domain}|{ipaddress})(":"{port})?("/"{name})*("/"|("/"{name}"."{name} ("#"{name})?))? 
-                         {System.out.printf("URL found [%s]\n",yytext());}
+                         {return symbol(URL, new String(yytext()));}
 
 {nl}			{System.out.printf("New Line\n");}
 //[^"*"]		{System.out.printf("Error [%s]\n",yytext());}
