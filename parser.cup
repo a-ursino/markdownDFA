@@ -1,0 +1,24 @@
+import java_cup.runtime.*;
+import java.util.*;
+
+init with {:
+    objHash = new HashMap();
+:};
+
+parser code {:
+    public static HashMap objHash;
+:};
+
+
+terminal STAR, EQUAL;
+terminal String STRING, URL;
+
+non terminal file,italico;
+
+start with file;
+
+
+italico1 ::= STAR STRING:s STAR
+{:
+	System.out.printf("dddd %s",s)
+:}
