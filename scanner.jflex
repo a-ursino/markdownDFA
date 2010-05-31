@@ -53,7 +53,7 @@ primelevel        = it|com|gov|edu|net|uk|fr|de|ne|jp|ch
 domain            = {name}.{name}(.{name})*.{primelevel}
 schema            = http|ftp|gopher|https|nntp|file
 
-%xstate STRINGSTATE
+
 
 %%
 
@@ -81,13 +81,7 @@ schema            = http|ftp|gopher|https|nntp|file
 {string}			{if(_DEBUG){System.out.printf("STRING Found [%s]\n",yytext());}
 */					return symbol(sym.STRING, new String(yytext()));}
 
-{char}				{yybegin(STRINGSTATE);bufferStr.setLength(0);bufferStr.append(yytext());}
 
-<STRINGSTATE>{
-
-
-
-}
 
 {schema}"://"({domain}|{ipaddress})(":"{port})?("/"{name})*("/"|("/"{name}"."{name} ("#"{name})?))? 
                          {if(_DEBUG){System.out.printf("URL Found [%s]\n",yytext());}
