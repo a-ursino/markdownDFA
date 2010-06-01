@@ -2,25 +2,77 @@ import java_cup.runtime.*;
 import java.util.*;
 
 init with {:
-    objHash = new HashMap();
+ 
+	objHash =   new HashMap();
+	htmlOutput = new StringBuffer();
+
 :};
 
 parser code {:
-    public static HashMap objHash;
+   public static HashMap objHash;
+   public static StringBuffer htmlOutput;
+    
+   public void report_error(String message, Object info) {
+  
+    StringBuffer m = new StringBuffer("Error ");
+
+    if (info instanceof java_cup.runtime.Symbol){
+        java_cup.runtime.Symbol s = (java_cup.runtime.Symbol)info;
+        m.append( "("+s.toString()+")" );
+    	m.append( " Error at line "+s.left);
+    	m.append( " column "+s.right);
+    	m.append( " with symbol "+s.sym);
+    }
+    m.append(" : "+message);
+   
+    System.err.println(m);
+  } 
+   
+  public void report_fatal_error(String message, Object info) {
+    report_error(message, info);
+    throw new RuntimeException("Fatal Syntax Error");
+  }
+
+    
+    
+    
 :};
 
 
-terminal STAR, EQUAL,SPACE,NEWLINE;
+terminal STAR, STARDOUBLE,EQUAL,SPACE,NEWLINE;
 terminal String STRING, URL;
-
-non terminal file,italico1;
+terminal Character LITCHAR;
+//non terminal symbols
+non terminal file,italico1,textString,spaceList,newlineList,newlineSingle,newlineDouble;
 
 start with file;
 
 file ::=italico1 {:
-	System.out.printf("Grammar ok\n");	
+	System.out.printf("Grammar ok\n");
+	System.out.printf("The output is\n\n %s\n",parser.htmlOutput);	
 :};
 
-italico1 ::= STAR STRING:s STAR
-{: System.out.printf("Rule Italico1 found\n"); :}
-;
+newlineSingle ::= NEWLINE {: RESULT = new String("\n"); :};
+
+
+newlineList ::= newlineSingle:nls NEWLINE {: RESULT= new String(nls+"\n"); :}
+			| newlineList:nll NEWLINE {: RESULT= new String(nll+"\n");   :} ;
+			
+spaceList ::= SPACE {: RESULT= new String(" "); :}
+			| spaceList:sl SPACE {: RESULT= new String(sl+" ");   :} ;			
+
+textString::= 
+			STRING:s {: RESULT=s; :}
+	| 		textString:s1 LITCHAR:l STRING:s2 {: RESULT=(s1+l.toString()+s2); :} 
+	|		textString:s1 newlineSingle:nls STRING:s2 {: RESULT=s1+(String)nls+s2; :}  
+//	|		textString:s3 newlineList:nll STRING:s4 {: RESULT=(s3+(String)nll+s4); :} 	
+//	|		textString:s5 spaceList:sl STRING:s6 {: RESULT=(s5+(String)sl+s6); :} 	
+	;
+
+
+
+italico1 ::= 
+		STAR textString:s STAR {: System.out.printf("Rule Italico1 found [%s]\n",s);
+		parser.htmlOutput.append("<em>"+s+"</em>");	
+		 :};
+		

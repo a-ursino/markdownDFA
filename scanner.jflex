@@ -62,7 +62,7 @@ schema            = http|ftp|gopher|https|nntp|file
 {star}				{if(_DEBUG){System.out.printf("STAR Found [%s]\n",yytext());}
 					return symbol(sym.STAR);}
 
-{starDouble}		{if(_DEBUG){System.out.printf("STARDOUBLE Found [%s]\n",yytext());
+{starDouble}		{if(_DEBUG){System.out.printf("STARDOUBLE Found [%s]\n",yytext());}
 					return symbol(sym.STARDOUBLE);}
 /*
 {underscore}		{return symbol(sym.UNDERSCORE);} 
@@ -82,15 +82,71 @@ schema            = http|ftp|gopher|https|nntp|file
 					return symbol(sym.STRING, new String(yytext()));}
 
 
-"\"      {yybegin(ESCAPESTATE);System.out.printf("Start ESCAPESTATE\n");}
+\\      			   { yybegin(ESCAPESTATE);
+					System.out.printf("Start ESCAPESTATE \n"); }
 
-<ESCAPESTATE>{
+<ESCAPESTATE> {
 
-"*"      			{System.out.printf("Literal Char Found [%s]",yytext());
-					yybegin(YYINITIAL);
-					return symbol(sym.LITCHAR,new Character('*'));
+"*"      			{ System.out.printf("Literal Char Found [%s]\n",yytext());
+					  yybegin(YYINITIAL);
+					  return symbol(sym.LITCHAR,new Character('*'));
 					}
-
+"#"					{ System.out.printf("Literal Char Found [%s]\n",yytext());
+					  yybegin(YYINITIAL);
+					  return symbol(sym.LITCHAR,new Character('#'));
+					}
+"!"					{ System.out.printf("Literal Char Found [%s]\n",yytext());
+					  yybegin(YYINITIAL);
+					  return symbol(sym.LITCHAR,new Character('!'));
+					}
+"+"					{ System.out.printf("Literal Char Found [%s]\n",yytext());
+					  yybegin(YYINITIAL);
+					  return symbol(sym.LITCHAR,new Character('+'));
+					}
+"-"					{ System.out.printf("Literal Char Found [%s]\n",yytext());
+					  yybegin(YYINITIAL);
+					  return symbol(sym.LITCHAR,new Character('-'));
+					}
+"_"					{ System.out.printf("Literal Char Found [%s]\n",yytext());
+					  yybegin(YYINITIAL);
+					  return symbol(sym.LITCHAR,new Character('_'));
+					}
+"_"					{ System.out.printf("Literal Char Found [%s]\n",yytext());
+					  yybegin(YYINITIAL);
+					  return symbol(sym.LITCHAR,new Character('#'));
+					}
+"("					{ System.out.printf("Literal Char Found [%s]\n",yytext());
+					  yybegin(YYINITIAL);
+					  return symbol(sym.LITCHAR,new Character('('));
+					}
+")"					{ System.out.printf("Literal Char Found [%s]\n",yytext());
+					  yybegin(YYINITIAL);
+					  return symbol(sym.LITCHAR,new Character(')'));
+					}
+"["					{ System.out.printf("Literal Char Found [%s]\n",yytext());
+					  yybegin(YYINITIAL);
+					  return symbol(sym.LITCHAR,new Character('['));
+					}
+"]"					{ System.out.printf("Literal Char Found [%s]\n",yytext());
+					  yybegin(YYINITIAL);
+					  return symbol(sym.LITCHAR,new Character(']'));
+					}
+"{"					{ System.out.printf("Literal Char Found [%s]\n",yytext());
+					  yybegin(YYINITIAL);
+					  return symbol(sym.LITCHAR,new Character('{'));
+					}
+"}"					{ System.out.printf("Literal Char Found [%s]\n",yytext());
+					  yybegin(YYINITIAL);
+					  return symbol(sym.LITCHAR,new Character('}'));
+					}
+"."					{ System.out.printf("Literal Char Found [%s]\n",yytext());
+					  yybegin(YYINITIAL);
+					  return symbol(sym.LITCHAR,new Character('.'));
+					}
+"`"					{ System.out.printf("Literal Char Found [%s]\n",yytext());
+					  yybegin(YYINITIAL);
+					  return symbol(sym.LITCHAR,new Character('`'));
+					}
 
 }
 
@@ -101,5 +157,6 @@ schema            = http|ftp|gopher|https|nntp|file
                          {if(_DEBUG){System.out.printf("URL Found [%s]\n",yytext());}
                          return symbol(sym.URL, new String(yytext()));}
 
-{nl}			{return symbol(sym.NEWLINE);}
+{nl}			{System.out.printf("NEWLINE Found \n");
+				return symbol(sym.NEWLINE);}
 //[^"*"]		{System.out.printf("Error [%s]\n",yytext());}
