@@ -75,4 +75,5 @@ italico1 ::=
 		STAR textString:s STAR {: System.out.printf("Rule Italico1 found [%s]\n",s);
 		parser.htmlOutput.append("<em>"+s+"</em>");	
 		 :};
+		 
 		
