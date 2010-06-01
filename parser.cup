@@ -39,11 +39,11 @@ parser code {:
 :};
 
 
-terminal STAR, STARDOUBLE,EQUAL,SPACE,NEWLINE;
+terminal STAR, STARDOUBLE,EQUAL,SPACE,NEWLINE,UNDERSCORE;
 terminal String STRING, URL;
 terminal Character LITCHAR;
 //non terminal symbols
-non terminal file,emphasized,textString,spaceList,newlineList,newlineSingle,newlineDouble;
+non terminal file,emphasized,textString,spaceList,newlineList,newlineSingle,newlineDouble,bold;
 
 start with file;
 
@@ -83,6 +83,8 @@ emphasized ::=
  Êparser.htmlOutput.append("<em>"+s+"</em>"); 
  Ê :};
 
-
+bold ::= Ê Ê 
+ Ê Ê ÊUNDERSCORE testString:s UNDERSCORE {: System.out.printf("Rule bold found [%s]\n",s);
+ Êparser.htmlOutput.append("<strong>"+s+"</strong>");  :};
 		 
 		
