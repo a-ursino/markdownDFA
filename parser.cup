@@ -43,7 +43,7 @@ terminal STAR, STARDOUBLE,EQUAL,SPACE,NEWLINE;
 terminal String STRING, URL;
 terminal Character LITCHAR;
 //non terminal symbols
-non terminal file,italico1,textString,spaceList,newlineList,newlineSingle,newlineDouble;
+non terminal file,emphasized,textString,spaceList,newlineList,newlineSingle,newlineDouble;
 
 start with file;
 
@@ -70,10 +70,19 @@ textString::=
 	;
 
 
-
+/*
 italico1 ::= 
 		STAR textString:s STAR {: System.out.printf("Rule Italico1 found [%s]\n",s);
 		parser.htmlOutput.append("<em>"+s+"</em>");	
 		 :};
+*/
+
+
+emphasized ::= 
+ ÊSTAR textString:s STAR {: System.out.printf("Rule emphasized found [%s]\n",s);
+ Êparser.htmlOutput.append("<em>"+s+"</em>"); 
+ Ê :};
+
+
 		 
 		
