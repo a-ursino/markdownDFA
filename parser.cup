@@ -39,12 +39,12 @@ parser code {:
 :};
 
 
-terminal STAR, STARDOUBLE,EQUAL,SPACE,NEWLINE,UNDERSCORE;
-terminal String STRING, URL;
+terminal STAR, STARDOUBLE,/*EQUAL,*/SPACE,NEWLINE,UNDERSCORE,UNDERSCOREDOUBLE;
+terminal String STRING/*, URL*/;
 terminal Character LITCHAR;
 
 //non terminal symbols
-non terminal file,emphasized,textString,spaceList,newlineList,newlineSingle,newlineDouble,bold,paragraph,parsedText;
+non terminal file,emphasized,textString,spaceList/*,newlineList*/,newlineSingle/*,newlineDouble*/,bold,paragraph,parsedText;
 
 start with file;
 
@@ -55,48 +55,58 @@ file ::= paragraph {:
 
 newlineSingle ::= NEWLINE {: RESULT = new String("\n"); :};
 
-
+/*
 newlineList ::= newlineSingle:nls NEWLINE {: RESULT= new String(nls+"\n"); :}
 			| newlineList:nll NEWLINE {: RESULT= new String(nll+"\n");   :} ;
-			
+*/			
 spaceList ::= SPACE {: RESULT= new String(" "); :}
 			| spaceList:sl SPACE {: RESULT= new String(sl+" ");   :} ;			
 
 textString::= 
 			STRING:s {: RESULT=s; :}
 	| 		textString:s1 LITCHAR:l STRING:s2 {: RESULT=(s1+l.toString()+s2); :} 
-	|		textString:s1 newlineSingle:nls STRING:s2 {: RESULT=s1+(String)nls+s2; :}  
-//	|		textString:s3 newlineList:nll STRING:s4 {: RESULT=(s3+(String)nll+s4); :} 	
-//	|		textString:s5 spaceList:sl STRING:s6 {: RESULT=(s5+(String)sl+s6); :} 	
+	|		textString:s1 newlineSingle:nls STRING:s2 {: RESULT=s1+(String)nls+s2; :}
+                         //Considero come test string anche le stringhe del tipo "pip pipo"
+        |               textString:s1 spaceList:sl STRING:s2 {: RESULT=s1+(String)sl+s2; :}	
 	;
 
 
-/*
-italico1 ::= 
-			STAR textString:s STAR {: System.out.printf("Rule Italico1 found [%s]\n",s);
-			parser.htmlOutput.append("<em>"+s+"</em>");	
-			:};
-*/
 
 
 emphasized ::=
 			STAR textString:s STAR {: System.out.printf("Rule emphasized found [%s]\n",s);
 			RESULT= new String("<em>"+s+"</em>");
-			:};
+			:}
 
-bold ::=
-			UNDERSCORE textString:s UNDERSCORE {: System.out.printf("Rule bold found [%s]\n",s);
-			RESULT= new String("<strong>"+s+"</strong>");  
+
+	|		UNDERSCORE textString:s UNDERSCORE {: System.out.printf("Rule bold found [%s]\n",s);
+			RESULT= new String("<em>"+s+"</em>");  
 			:};
+                      
+                        
+                      //riconosce i bold 
+ bold ::=             STARDOUBLE textString:s STARDOUBLE {: System.out.printf("Rule bold found [%s]\n",s);
+                      RESULT= new String("<strong>"+s+"</strong>");
+                      :}
+                      
+      |               UNDERSCOREDOUBLE textString:s UNDERSCOREDOUBLE{: System.out.printf("Rule bold found [%s]\n",s);
+                      RESULT= new String("<strong>"+s+"</strong>");
+                      :};
+                     
+                        
+                        
 			
 parsedText ::= 
-				textString:s2 {: RESULT=(String)s2; :}
+				STRING:s {: RESULT=(String)s; :}
 	|			emphasized:em {: RESULT=(String)em; :}
-	|			bold:bd {: RESULT=(String)bd; :} ;
- 
+	|			bold:bd {: RESULT=(String)bd; :} 
+                                //Sequenza di piu elementi
+        |                       parsedText:pt spaceList:sl emphasized:em {: RESULT=pt+(String)sl+(String)em; :}
+        |                       parsedText:pt spaceList:sl bold:bl {: RESULT=pt+(String)sl+(String)bl; :}
+        |                       parsedText:pt spaceList:sl STRING:s {: RESULT=pt+(String)sl+(String)s; :}
+        ;
+        
 paragraph ::= 
-				parsedText:pt spaceList:sl emphasized:em {: 
-				parser.htmlOutput.append("<p>"+(String)pt+(String)em+"</p>");	
-				:}
-//		|			parsedText:pt spaceList:sl bold:bd {: :}			
-;
+                                //Inserisco il paragrafo in qualsiasi sequenza di stili(bold,italico,stringa) separati da uno space
+                                parsedText:pt {: parser.htmlOutput.append("<p>"+(String)pt+"</p>");:}    
+                                 ;
