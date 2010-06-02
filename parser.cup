@@ -44,7 +44,7 @@ terminal String STRING/*, URL*/;
 terminal Character LITCHAR;
 
 //non terminal symbols
-non terminal file,emphasized,textString,spaceList/*,newlineList*/,newlineSingle/*,newlineDouble*/,bold,paragraph,parsedText;
+non terminal file,emphasized,textString,spaceList,newlineList,newlineSingle/*,newlineDouble*/,bold,paragraph,parsedText,conjugation;
 
 start with file;
 
@@ -55,13 +55,15 @@ file ::= paragraph {:
 
 newlineSingle ::= NEWLINE {: RESULT = new String("\n"); :};
 
-/*
-newlineList ::= newlineSingle:nls NEWLINE {: RESULT= new String(nls+"\n"); :}
-			| newlineList:nll NEWLINE {: RESULT= new String(nll+"\n");   :} ;
-*/			
-spaceList ::= SPACE {: RESULT= new String(" "); :}
-			| spaceList:sl SPACE {: RESULT= new String(sl+" ");   :} ;			
+                        // Riconosce una lista di accapo(/n).
+newlineList::=          newlineSingle:nls NEWLINE {: RESULT= new String(nls+"\n"); :}
+        |               newlineList:nll NEWLINE {: RESULT= new String(nll+"\n");:} ;
+	
+                        
+spaceList ::=           SPACE {: RESULT= new String(" "); :}
+        |               spaceList:sl SPACE {: RESULT= new String(sl+" ");   :} ;			
 
+//Strighe usate nell'italico e nel bold        
 textString::= 
 			STRING:s {: RESULT=s; :}
 	| 		textString:s1 LITCHAR:l STRING:s2 {: RESULT=(s1+l.toString()+s2); :} 
@@ -72,8 +74,8 @@ textString::=
 
 
 
-
-emphasized ::=
+                        // Riconosce gli italici
+emphasized ::=  
 			STAR textString:s STAR {: System.out.printf("Rule emphasized found [%s]\n",s);
 			RESULT= new String("<em>"+s+"</em>");
 			:}
@@ -93,20 +95,49 @@ emphasized ::=
                       RESULT= new String("<strong>"+s+"</strong>");
                       :};
                      
-                        
-                        
+                
+                      //Denisco l'annidamento tra un italico e un bold
+conjugation::=        STARDOUBLE STAR textString:s STARDOUBLE STAR {: System.out.printf("Rule conjugation found [%s]\n",s);
+                      RESULT= new String("<strong><em>"+s+"</em></strong>");:}
+                    
+      |               UNDERSCOREDOUBLE STAR textString:s UNDERSCOREDOUBLE STAR {: System.out.printf("Rule conjugation found [%s]\n",s);
+                      RESULT= new String("<strong><em>"+s+"</em></strong>");:}
+
+      |               STARDOUBLE UNDERSCORE textString:s STARDOUBLE UNDERSCORE {: System.out.printf("Rule conjugation found [%s]\n",s);
+                      RESULT= new String("<strong><em>"+s+"</em></strong>");:}
+                    
+      |               UNDERSCOREDOUBLE UNDERSCORE textString:s UNDERSCOREDOUBLE UNDERSCORE {: System.out.printf("Rule conjugation found [%s]\n",s);
+                      RESULT= new String("<strong><em>"+s+"</em></strong>");:}   
+      ;                    
 			
 parsedText ::= 
-				STRING:s {: RESULT=(String)s; :}
-	|			emphasized:em {: RESULT=(String)em; :}
-	|			bold:bd {: RESULT=(String)bd; :} 
-                                //Sequenza di piu elementi
-        |                       parsedText:pt spaceList:sl emphasized:em {: RESULT=pt+(String)sl+(String)em; :}
-        |                       parsedText:pt spaceList:sl bold:bl {: RESULT=pt+(String)sl+(String)bl; :}
-        |                       parsedText:pt spaceList:sl STRING:s {: RESULT=pt+(String)sl+(String)s; :}
+                STRING:s {: RESULT=(String)s; :}
+	|       emphasized:em {: RESULT=(String)em; :}
+	|	bold:bd {: RESULT=(String)bd; :} 
+                //Sequenza di piu elementi
+        |       parsedText:pt spaceList:sl emphasized:em {: RESULT=pt+(String)sl+(String)em; :}
+        |       parsedText:pt spaceList:sl bold:bl {: RESULT=pt+(String)sl+(String)bl; :}
+        |       parsedText:pt spaceList:sl STRING:s {: RESULT=pt+(String)sl+(String)s; :}
         ;
         
 paragraph ::= 
-                                //Inserisco il paragrafo in qualsiasi sequenza di stili(bold,italico,stringa) separati da uno space
-                                parsedText:pt {: parser.htmlOutput.append("<p>"+(String)pt+"</p>");:}    
-                                 ;
+                //Inserisco il paragrafo in qualsiasi sequenza di stili(bold,italico,stringa) separati da uno space
+                parsedText:pt {: parser.htmlOutput.append("<p>"+(String)pt+"</p>");:}  
+        |       conjugation:c {: parser.htmlOutput.append("<p>"+(String)c+"</p>");:} 
+                //Riconosce il paragrafo anche se seguito da spazi. NB. gli spazi compaiono nell'output
+        |       parsedText:pt spaceList:sl {: parser.htmlOutput.append("<p>"+(String)pt+(String)sl+"</p>");:}
+                //Riconosce il paragrafo anche se seguito da un invio(/n) NB. l'accapo non compare nell'ouput
+        |       parsedText:pt newlineSingle:nsl {: parser.htmlOutput.append("<p>"+(String)pt+"</p>");:}
+                //Riconosce il paragrafo anche se seguito da piu invii(/n/n/n) NB. l'accapo non compare nell'ouput
+        |       parsedText:pt newlineList:nll {: parser.htmlOutput.append("<p>"+(String)pt+"</p>");:}
+                //Riconosce il paragrafo seguito da uno spazio e da accapo
+        |        parsedText:pt spaceList:sl newlineSingle:nsl {: parser.htmlOutput.append("<p>"+(String)pt+(String)sl+"</p>");:}
+                //Riconosce il paragrafo seguito da spazi e da accapo
+        |        parsedText:pt spaceList:sl  newlineList:nll {: parser.htmlOutput.append("<p>"+(String)pt+(String)sl+"</p>");:}
+        
+        ;
+        
+        
+        
+        
+        
