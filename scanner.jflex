@@ -9,6 +9,7 @@ import java_cup.runtime.*;
 %column
 %cup
 
+
 %{
   private Boolean _DEBUG=true;
   StringBuffer bufferStr = new StringBuffer();
@@ -31,7 +32,7 @@ space			= " "
 string			= [a-zA-Z0-9.,;:]+
 star			= \*
 starDouble		= \*\* 
-underscore		= _ 
+underscore		= \_ 
 underscoreDouble	= __
 squareBracketO		= \[
 squareBracketC		= \]
@@ -64,8 +65,10 @@ schema            = http|ftp|gopher|https|nntp|file
 
 {starDouble}		{if(_DEBUG){System.out.printf("STARDOUBLE Found [%s]\n",yytext());}
 					return symbol(sym.STARDOUBLE);}
+
+{underscore}		{if(_DEBUG){System.out.printf("UNDERSCORE Found [%s]\n",yytext()); }
+					return symbol(sym.UNDERSCORE);} 
 /*
-{underscore}		{return symbol(sym.UNDERSCORE);} 
 {underscoreDouble}	{return symbol(sym.UNDERSCOREDOUBLE);}
 {squareBracketO}	{return symbol(sym.SQUAREBRACKETO);}
 {squareBracketC}	{return symbol(sym.SQUAREBRACKETC);}
