@@ -1,78 +1,1481 @@
+/*
+  freely inspired to java specification
+http://www.daimi.au.dk/dRegAut/JavaBNF.html*/
 import java_cup.runtime.*;
 import java.util.*;
+import st.*;
+import java.io.*;
+import java_cup.runtime.*;
+import java.lang.*;
+
 
 init with {:
- 
-	objHash =   new HashMap();
-	htmlOutput = new StringBuffer();
-
-:};
+	step=0;
+	Type.initTypes(); 
+        htmlOutput	=	new StringBuffer();
+	hash_number =	0;
+        m =  new HtmlSerializer();
+  
+        //Mi serve per determinare se si tratta di un while esterno o un while interno/annidato
+        count=0;
+        
+        // in esso ripongo il valore ritornato dalla lista dei risultati delle espressioni if e while
+        expressionValue=true;
+        //Posto a false non immagazzino le istruzioni/espressione nella lista while
+        controlWhile=false;
+          //Gestisce il while
+        expressionValueWhile=true;
+  :};
 
 parser code {:
-   public static HashMap objHash;
-   public static StringBuffer htmlOutput;
-    
-   public void report_error(String message, Object info) {
+
+	int step;
+	boolean stepCheck=true;
+        int count;
   
-    StringBuffer m = new StringBuffer("Error ");
+    
+         //Mi serve per valutare le espressioni
+        boolean expressionValue;
+  
+        boolean expressionValueWhile;
+        //Mi serve per immagazzinare gestire il salvataggio nella lista del codice del corpo dei while
+        boolean controlWhile;
+        public static StringBuffer htmlOutput;
+	public static int hash_number;
+        public static HtmlSerializer m;
+	
+        public void hashPlus()
+        {
+              hash_number++;
+	}
+        
+public String bufferAppend(String str, Html_tag tag){
+		//action
+		//	0 to create a new node of type tag with content str
+		//	1 to append str to html node previously created
+		
+		System.out.printf("bufferAppend\n");
+		int i=0;
+                StringBuffer htmlOutputTemp=new StringBuffer();
+    
+		switch(tag){
 
-    if (info instanceof java_cup.runtime.Symbol){
-        java_cup.runtime.Symbol s = (java_cup.runtime.Symbol)info;
-        m.append( "("+s.toString()+")" );
-    	m.append( " Error at line "+s.left);
-    	m.append( " column "+s.right);
-    	m.append( " with symbol "+s.sym);
-    }
-    m.append(" : "+message);
-   
-    System.err.println(m);
-  } 
-   
-  public void report_fatal_error(String message, Object info) {
-    report_error(message, info);
-    throw new RuntimeException("Fatal Syntax Error");
-  }
+			case HEADER: //HEADER
+				System.out.printf("__Create a new header tag\n");
+				if(hash_number<6){
+					String hTag= new String("h"+Integer.toString(hash_number));
+					htmlOutputTemp.append("<"+hTag+">");
+					htmlOutputTemp.append(str);
+					htmlOutputTemp.append("</"+hTag+">");
+				}else{
+					htmlOutputTemp.append("<h6>");
+					for(i=6;i<hash_number;i++){
+						htmlOutputTemp.append("#");
+					}
+					htmlOutputTemp.append(str+"</h6>\n");
+				}
+				hash_number=0;
+			break;
+			case ORDEREDLIST:
+				htmlOutputTemp.append("<ol>\n");
+				htmlOutputTemp.append(str);
+				htmlOutputTemp.append("</ol>\n");
+			break;
+			case UNORDERLIST:
+				htmlOutputTemp.append("<ul>\n");
+				htmlOutputTemp.append(str);
+				htmlOutputTemp.append("</ul>\n");
+			break;
+			case PRECODE:
+				htmlOutputTemp.append("<pre><code>\n");
+				htmlOutputTemp.append(str);
+				htmlOutputTemp.append("</pre></code>\n");
+			break;
+			default:
+				System.out.printf("__Unknow tag\n");
+				break;
+		}
+                return htmlOutputTemp.toString();
+	}
+  
+  
+        //Funzione per la gestione degli errori
+        public void report_error(String message, Object info) 
+          {
+              StringBuffer m = new StringBuffer("#####report_error ");
+              if (info instanceof java_cup.runtime.Symbol)
+                {
+			java_cup.runtime.Symbol s = (java_cup.runtime.Symbol)info;
+			m.append( "("+s.toString()+")" );
+			m.append( " Error at line "+s.left);
+			m.append( " column "+s.right);
+			m.append( " with symbol "+s.sym);
+		}
+              m.append(" : "+message)  ;
+              System.err.println(m);
+	}
 
-    
-    
-    
+        public String closeOL(String str1,String str2){
+                
+		return bufferAppend(str1+str2,Html_tag.ORDEREDLIST);
+	}
+	
+	public String closeUOL(String str1,String str2){
+		return bufferAppend(str1+str2,Html_tag.UNORDERLIST);
+	}
+	
+	public String closePreCode(String str1,String str2){
+		return bufferAppend(str1+str2,Html_tag.PRECODE);
+	}
+        
+     public void end(){
+ m.write(htmlOutput,"Output.html");
+     }
+        
+	public void report_fatal_error(String message, Object info) {
+		report_error(message, info);
+		throw new RuntimeException("Fatal Syntax Error");
+	}
+	
+	public void sD(String msg){	
+		if (stepCheck) {
+			System.out.println("\t\t\t__"+step+"__  "+msg);
+			step++;
+		}	
+	}
+        
+
 :};
 
+//terminal symbols
 
-terminal STAR, STARDOUBLE,EQUAL,SPACE,NEWLINE;
-terminal String STRING, URL;
-terminal Character LITCHAR;
+terminal SPACE,STAR,STARDOUBLE,UNDERSCORE,UNDERSCOREDOUBLE,STRING,NEWSTAR,NEWUNDERSCOREDOUBLE,NEWUNDERSCORE,NEWSTARDOUBLE,EQUAL,ROUNDBRACKETO,ROUNDBRACKETC,HASH,SQUAREBRACKETO,SQUAREBRACKETC,
+LITCHAR,HASH_BEG,STARTORDLIST,STARTUNORDLIST,STARTPRE,ROWSPACE,BOOLEAN,CHAR,ELSE,FLOAT,INT,IF,SEMICOLON,COMMA,GT,LT,NOT,
+EQ_EQ,LTEQ,GTEQ,NOT_EQ,AND_AND,OR_OR,MINUS,PLUS,DIV,MULTIPLY,LEFTBRACE,RIGHTBRACE,WHILE,NEWSTRING
+,STRING_TYPE,MARKS,FUNCTION;
+
+
+terminal java.lang.Integer VALUE;
+terminal java.lang.Float FLOAT_VALUE;
+terminal java.lang.Boolean BOOL_VALUE;
+terminal java.lang.String CHAR_VALUE;                         
+terminal java.lang.String ID_NAME;
+
+
+
+
 //non terminal symbols
-non terminal file,italico1,textString,spaceList,newlineList,newlineSingle,newlineDouble;
+non terminal file,spaceL,type,var_id,vars,declarations,primitive_type,stringFusion,stringFusion2,Fusion,newemphasized,newbold,
+unary_exp,mult_exp,add_exp,r_exp,eq_exp,and_exp,or_exp,cond_exp,ass_expression,expression,name,if_then_st, statement,postfix_exp,
+block_st, block_sts, block_sts_opt, block,st_w_ts,while_st,assign,declarationsMul,union,multipleStringValues,multipleIntValues,multipleFloatValues
+,text,text2,tempString,emphasized,bold,formattedTest,paragraph,textString,hashBegL,textHeader,header,orederedLI,orederedLIS,
+unorderedLI,unorderedLIS,textG,precodeS,precode,doubletempString,fusion,finalFusion,temp,input1,input2,input3;
+
+precedence left SPACE,STRING,LITCHAR,STAR,STARDOUBLE,UNDERSCORE,NEWSTRING,NEWSTAR,NEWUNDERSCOREDOUBLE,NEWUNDERSCORE,NEWSTARDOUBLE,
+UNDERSCOREDOUBLE,ROWSPACE,HASH_BEG,STARTORDLIST,STARTUNORDLIST, STARTPRE,CHAR,FLOAT,BOOLEAN,INT,STRING_TYPE,ID_NAME,RIGHTBRACE,IF,LEFTBRACE,WHILE;
+
+precedence left SEMICOLON,ELSE,FUNCTION;
 
 start with file;
 
-file ::=italico1 {:
-	System.out.printf("Grammar ok\n");
-	System.out.printf("The output is\n\n %s\n",parser.htmlOutput);	
-:};
 
-newlineSingle ::= NEWLINE {: RESULT = new String("\n"); :};
+ file	::=  finalFusion {: System.out.printf("Grammar ok\n");
+                                              System.out.printf("The output is\n\n%s\n",parser.htmlOutput); parser.end(); Enviroment.printAll();
+   
+   :} 
+
+                ;
+                               
+                                
+                                
+//Lista di spazi                        
+spaceL ::=              SPACE	{: RESULT= new String(" "); :}
+    |	                spaceL:sl SPACE {: RESULT= new String(sl+" ");   :}
+    ;
 
 
-newlineList ::= newlineSingle:nls NEWLINE {: RESULT= new String(nls+"\n"); :}
-			| newlineList:nll NEWLINE {: RESULT= new String(nll+"\n");   :} ;
+    
+//Formattazione delle strighe per paragrafo singolo
+tempString ::=          STRING:s{: RESULT=s; :}
+    |                   tempString:ts STRING:s {: RESULT=ts+"\n"+(String)s; :}
+    |                   tempString:ts spaceL STRING:s {: RESULT=ts+" "+(String)s; :}
+    |                   tempString:ts spaceL {: RESULT=ts+" "; :} 
+    |                   tempString:ts LITCHAR:l {: RESULT=ts+l.toString(); :}
+    |                   ROWSPACE:rs STRING:ts {: RESULT=ts; System.out.println("#####Insert ROWSPACE");:}
+    |                   tempString:ts ROWSPACE:rs{: RESULT=ts; :}
+    
+    //Unione con bold ed emphasize
+    |                   tempString:ts emphasized:em {: RESULT=ts+(String)em; :}
+    |                   tempString:ts bold:bd {: RESULT=ts+(String)bd; :}
+    ;   
+
+
+//Formattazione delle strighe per paragrafo multiple 
+doubletempString ::=    NEWSTRING:ns  {: RESULT="<p>"+ns;  :}
+    |                   doubletempString:dns NEWSTRING:ns {: RESULT= dns+"</p>"+"\n"+"<p>"+ns; :}
+    |                   doubletempString:dns spaceL {: RESULT=dns+" "; :} 
+    |                   doubletempString:dns LITCHAR:l {: RESULT=dns+l.toString(); :}
+    |                   ROWSPACE:rs NEWSTRING:ns {: RESULT="<p>"+ns; System.out.println("#####Insert ROWSPACE");:}
+    |                   doubletempString:ns ROWSPACE {: RESULT=ns; System.out.println("#####Insert ROWSPACE"); :}
+    
+    //Unione con bold ed emphasize
+    |                  doubletempString:ns emphasized:em {: RESULT=ns+(String)em; :}
+    |                  doubletempString:ns bold:bd {: RESULT=ns+(String)bd; :}
+    ;   
+
+          
+
+    
+
+stringFusion::=    tempString:ts {: RESULT= "<p>"+ts+"</p>"; :}
+     |             doubletempString:dts tempString:ts {: RESULT=dts+" "+(String)ts+"</p>"; :}      
+     |             stringFusion:sf doubletempString:dts   {: RESULT=sf+"\n"+(String)dts+"</p>"; :}              
+     |             stringFusion:sf doubletempString:dts tempString:ts {: RESULT=sf+"\n"+(String)dts+" "+(String)ts+"</p>"; :}
+      
+     //Unione con newbold ed newemphasize 
+     |             stringFusion:sf newemphasized:em {: RESULT=sf+"\n"+"<p>"+em+"</p>"; :}
+     |             stringFusion:sf newbold:bd {: RESULT= sf+"\n"+"<p>"+bd+"</p>"; :}
+     
+     |             stringFusion:sf newemphasized:em tempString:ts {:RESULT=sf+"\n"+"<p>"+(String)em+" "+ts+"</p>"; :}
+     |             stringFusion:sf newemphasized:em doubletempString:dts tempString:ts {: RESULT=sf+"\n"+"<p>"+(String)em+"</p>"+"\n"+(String)dts+" "+(String)ts+"</p>"; :}     
+     |             stringFusion:sf newemphasized:em doubletempString:dts {: RESULT=sf+"\n"+"<p>"+(String)em+"</p>"+"\n"+(String)dts+"</p>"; :}          
+     |             stringFusion:sf newemphasized:nem emphasized:em {: RESULT=sf+"\n"+"<p>"+nem+" "+(String)em+"</p>"; :} 
+     |             stringFusion:sf newemphasized:nem bold:bd  {: RESULT=sf+"\n"+"<p>"+nem+" "+(String)bd+"</p>"; :}   
+     |             stringFusion:sf newemphasized:nem emphasized:em tempString:ts {: RESULT=sf+"\n"+"<p>"+nem+" "+(String)em+" "+ts+"</p>"; :} 
+     |             stringFusion:sf newemphasized:nem bold:bd  tempString:ts {: RESULT=sf+"\n"+"<p>"+nem+" "+(String)bd+" "+ts+"</p>"; :}   
+     
+     
+     |             stringFusion:sf newbold:bd tempString:ts {:RESULT=sf+"\n"+"<p>"+(String)bd+" "+ts+"</p>"; :}
+     |             stringFusion:sf newbold:bd doubletempString:dts tempString:ts {: RESULT=sf+"\n"+"<p>"+(String)bd+"</p>"+"\n"+(String)dts+" "+(String)ts+"</p>"; :}   
+     |             stringFusion:sf newbold:bd doubletempString:dts {: RESULT=sf+"\n"+"<p>"+(String)bd+"</p>"+"\n"+(String)dts+"</p>"; :}       
+     |             stringFusion:sf newbold:nbd emphasized:em {: RESULT=sf+"\n"+"<p>"+nbd+" "+(String)em+"</p>"; :} 
+     |             stringFusion:sf newbold:nbd bold:bd  {: RESULT=sf+"\n"+"<p>"+nbd+" "+(String)bd+"</p>"; :}  
+     |             stringFusion:sf newbold:nbd emphasized:em tempString:ts{: RESULT=sf+"\n"+"<p>"+nbd+" "+(String)em+" "+ts+"</p>"; :} 
+     |             stringFusion:sf newbold:nbd bold:bd tempString:ts {: RESULT=sf+"\n"+"<p>"+nbd+" "+(String)bd+" "+ts+"</p>"; :}  
+     
+       //Pericolanti
+     |             stringFusion:sf emphasized:em {: RESULT=sf+" "+(String)em+"</p>"; :}
+     |             stringFusion:sf bold:bd {: RESULT=sf+" "+(String)bd+"</p>"; :}
+     ;
+
+     
+ stringFusion2::=
+                 doubletempString:dts {: RESULT=(String)dts; :} 
+      |          tempString:ts doubletempString:dts {: RESULT="<p>"+ts+"</p>"+"\n"+dts; :}     
+      |          stringFusion2:sf tempString:ts {: RESULT=sf+(String)ts; :}     
+      |          stringFusion2:sf tempString:ts  doubletempString:dts {: RESULT=sf+(String)ts+"</p>"+dts; :}               
+      
+      
+      //Unione con newbold ed newemphasize 
+     |             stringFusion2:sf newemphasized:em {: RESULT=sf+"</p>"+"\n"+"<p>"+em; :}
+     |             stringFusion2:sf newbold:bd {: RESULT= sf+"</p>"+"\n"+"<p>"+bd; :}
+     
+     |             stringFusion2:sf newemphasized:em tempString:ts {: RESULT=sf+"</p>"+"\n"+"<p>"+(String)em+" "+(String)ts; :} 
+     |             stringFusion2:sf newemphasized:em tempString:ts doubletempString:dts {: RESULT=sf+"</p>"+"\n"+"<p>"+(String)em+" "+(String)ts+"</p>"+"\n"+dts;  :}
+     |             stringFusion2:sf newemphasized:em doubletempString:dts {: RESULT=sf+"</p>"+"\n"+"<p>"+(String)em+"</p>"+"\n"+dts; :}
+     |             stringFusion2:sf newemphasized:nem emphasized:em {: RESULT=sf+"</p>"+"\n"+"<p>"+nem+" "+(String)em; :} 
+     |             stringFusion2:sf newemphasized:nem bold:bd  {: RESULT=sf+"</p>"+"\n"+"<p>"+nem+" "+(String)bd; :}   
+     |             stringFusion2:sf newemphasized:nem emphasized:em tempString:ts{: RESULT=sf+"</p>"+"\n"+"<p>"+nem+" "+(String)em+" "+ts; :} 
+     |             stringFusion2:sf newemphasized:nem bold:bd tempString:ts{: RESULT=sf+"</p>"+"\n"+"<p>"+nem+" "+(String)bd+" "+ts; :}   
+            
+     
+     |             stringFusion2:sf newbold:bd tempString:ts {: RESULT=sf+"</p>"+"\n"+"<p>"+(String)bd+" "+(String)ts; :} 
+     |             stringFusion2:sf newbold:bd tempString:ts doubletempString:dts {: RESULT=sf+"</p>"+"\n"+"<p>"+(String)bd+" "+(String)ts+"</p>"+"\n"+dts;  :}
+     |             stringFusion2:sf newbold:bd doubletempString:dts {: RESULT=sf+"</p>"+"\n"+"<p>"+(String)bd+"</p>"+"\n"+dts; :}
+     |             stringFusion2:sf newbold:nbd emphasized:em {: RESULT=sf+"</p>"+"\n"+"<p>"+nbd+" "+(String)em; :} 
+     |             stringFusion2:sf newbold:nbd bold:bd  {: RESULT=sf+"</p>"+"\n"+"<p>"+nbd+" "+(String)bd; :}   
+     |             stringFusion2:sf newbold:nbd emphasized:em tempString:ts{: RESULT=sf+"</p>"+"\n"+"<p>"+nbd+" "+(String)em+" "+ts; :} 
+     |             stringFusion2:sf newbold:nbd bold:bd tempString:ts{: RESULT=sf+"</p>"+"\n"+"<p>"+nbd+" "+(String)bd+" "+ts; :}   
+     //Pericolanti
+     |             stringFusion2:sf emphasized:em {: RESULT=sf+" "+(String)em; :}
+     |             stringFusion2:sf bold:bd {: RESULT=sf+" "+(String)bd; :}
+     
+     ;
+      
+      
+  Fusion::=     stringFusion:sf  {: RESULT=(String)sf; :}
+      |         stringFusion2:sf {: RESULT=sf+"</p>"; :}
+      ;
+  
+      
+//Formattazione delle stringhe intene a emphasized e bold     
+textString ::=          STRING:s {: RESULT=s; :}
+    |                   textString:ts STRING:s {: RESULT=ts+(String)s; :}
+    |                   textString:ts LITCHAR:l {: RESULT=ts+l.toString(); :}
+    |                   textString:ts spaceL:sl STRING:s {: RESULT=ts+(String)sl+s; :}
+    |                   textString:ts spaceL:sl LITCHAR:l {: RESULT=ts+(String)sl+l; :}
+    ;
+
+
+//Riconosco emphasized 
+emphasized ::=          STAR textString:s STAR {: System.out.printf("Rule emphasized found [%s]\n",s);
+			RESULT= new String("<em>"+s+"</em>"); :}
+                    
+          |   		UNDERSCORE textString:s UNDERSCORE {: System.out.printf("Rule bold found [%s]\n",s);
+			RESULT= new String("<em>"+s+"</em>"); :}
+        
+          |             emphasized:em SPACE {: RESULT=em+" "; :}   
+          |             emphasized:em ROWSPACE {: RESULT=em+" "; System.out.println("#####Insert ROWSPACE"); :} 
+          ;
+          
+//Riconosco emphasized preceduto da piu di due \n             
+newemphasized::=        NEWSTAR textString:s STAR {: System.out.printf("Rule Newemphasized found [%s]\n",s);
+			RESULT= new String("<em>"+s+"</em>"); :}
+                    
+          |   		NEWUNDERSCORE textString:s UNDERSCORE {: System.out.printf("Rule bold found [%s]\n",s);
+			RESULT= new String("<em>"+s+"</em>"); :}
+        
+          |             newemphasized:em SPACE {: RESULT=em+" "; :}  
+          |             newemphasized:em ROWSPACE {: RESULT=em+" "; System.out.println("#####Insert ROWSPACE"); :}  
+          ;
+                        
+
+//riconosce i bold 
+ bold ::=               STARDOUBLE textString:s STARDOUBLE {: System.out.printf("Rule bold found [%s]\n",s);
+                        RESULT= new String("<strong>"+s+"</strong>"); :}
+
+  
+      |                 UNDERSCOREDOUBLE textString:s UNDERSCOREDOUBLE{: System.out.printf("Rule bold found [%s]\n",s);
+                        RESULT= new String("<strong>"+s+"</strong>"); :}
+                      
+      |                 bold:bd SPACE {: RESULT=bd+" "; :}   
+      |                 bold:bd ROWSPACE {: RESULT=bd+" "; System.out.println("#####Insert ROWSPACE"); :} 
+      ;
+
+//Riconosco bold preceduto da piu di due \n 
+ newbold ::=            NEWSTARDOUBLE textString:s STARDOUBLE {: System.out.printf("Rule bold found [%s]\n",s);
+                        RESULT= new String("<strong>"+s+"</strong>"); :}
+
+  
+      |                 NEWUNDERSCOREDOUBLE textString:s UNDERSCOREDOUBLE{: System.out.printf("Rule bold found [%s]\n",s);
+                        RESULT= new String("<strong>"+s+"</strong>"); :}
+                      
+      |                 newbold:bd SPACE {: RESULT=bd+" "; :}   
+      |                 newbold:bd ROWSPACE {: RESULT=bd+" "; System.out.println("#####Insert ROWSPACE");:}
+      ;
+
+                                           
+
+// italico e un bold si riducono in formattedTest 
+formattedTest::=        emphasized:em {:  RESULT="<p>"+em; :}                     
+      |                 bold:bd {:  RESULT="<p>"+bd; :}   
+      |                 newemphasized:nem {:  RESULT="<p>"+nem; :}                     
+      |                 newbold:nbd {:  RESULT="<p>"+nbd; :}   
+                                        
+      
+      |                 formattedTest:ft emphasized:em {: RESULT= ft+(String)em;  :}    
+      |                 formattedTest:ft bold:bd {: RESULT= ft+(String)bd; :} 
+      |                 formattedTest:ft SPACE {: RESULT=ft+" "; :}    
+      |                 formattedTest:ft tempString:ts {: RESULT=ft+(String)ts; :}
+      |                 formattedTest:ft doubletempString:dts {: RESULT=ft+"</p>"+"\n"+(String)dts; :} 
+      |                 formattedTest:ft newemphasized:ne {: RESULT=ft+"</p>"+"\n"+"<p>"+(String)ne; :}
+      |                 formattedTest:ft newbold:nb {: RESULT=ft+"</p>"+"\n"+"<p>"+(String)nb; :}        
+      ;
+ 
+   
+                       //paragrafo singolo 
+paragraph ::=           Fusion:sf {: RESULT=(String)sf; :} 
+          |             formattedTest:ft {: RESULT= ft+"</p>"+"\n"; :}
+          ;
+
+
+// Riconosco il numero di # quindi il tipo di titolo
+hashBegL::=           HASH_BEG {: parser.hashPlus();  :}
+    |	              hashBegL HASH {: parser.hashPlus(); :}
+    ;
+
+    
+//Formattazione delle stringhe interne a Titoli (header) NB. la stringa con un singolo /n viene considerata parte del titolo
+textHeader::=	     hashBegL spaceL			{: RESULT =""; :}
+    | 		     textHeader:tH STRING:str 		{: RESULT = (String)tH+str+" "; :}
+    |		     textHeader:tH LITCHAR:lc 		{: RESULT = (String)tH+lc.toString(); :}
+    |		     textHeader:tH spaceL STRING:str 	{: RESULT = (String)tH+" "+str; :}
+    |		     textHeader:tH spaceL:sl 		{: RESULT = (String)tH+(String)sl; :}
+    ;
+
+//Riconosco la fine del titolo                
+header::=            textHeader:th  {: RESULT=parser.bufferAppend((String)th,Html_tag.HEADER); :} 
+    |                header:h  textHeader:th {: RESULT=(String)h+"\n"+parser.bufferAppend((String)th,Html_tag.HEADER); :}  	
+    ;	
+  
+//Combinazione header paragraph
+text::=       paragraph:ph {: parser.htmlOutput.append(ph); :}
+      |       header:th {:  parser.htmlOutput.append("\n"); parser.htmlOutput.append(th);  :}
+      |       text paragraph:ph {:  parser.htmlOutput.append("\n"); parser.htmlOutput.append(ph); :}          
+      |       text:t header:th  {:  parser.htmlOutput.append("\n\n"); parser.htmlOutput.append(th); parser.htmlOutput.append("\n"); :}
+      ;              
+ 
+
+//Riconosco il simboli di inizio lista ordinata
+orederedLIS::=       STARTORDLIST;
+  
+  
+//Formattazione delle stringhe all'interno di una lista ordinata
+textG::=            STRING:str {:RESULT = new String((String)str);:}
+   |                textG:tg STRING:str{: RESULT = tg+(String)str; :}
+   |                textG:tg LITCHAR:lc{: RESULT = tg+(String)lc.toString(); :}
+   |                textG:tg spaceL:str{: RESULT = tg+(String)str; :}
+   ;
+
+   
+   
+//Definizione di una lista ordinata:( la lista deve essere almeno di 2 elementi divisi da uno /n)
+orederedLI::=      orederedLIS textG:t  {:RESULT ="<li>"+(String)t+"</li>\n"; :}
+    |	           orederedLI:oli orederedLIS textG:t {: RESULT= oli+"<li>"+(String)t+"</li>\n"; :}
+    ; 
+
+
+
+// Riconosco il simbolo di una lista non ordinata
+unorderedLIS::=   STARTUNORDLIST 
+    ;
+
+    
+//Definizione di una lista non ordinata:( la lista deve essere almeno di 2 elementi divisi da uno /n)
+unorderedLI ::=	  unorderedLIS textG:t 	{:RESULT ="<li>"+(String)t+"</li>\n"; :}
+     |            unorderedLI:uoli unorderedLIS textG:t {: RESULT= uoli+"<li>"+(String)t+"</li>\n"; :}
+ 
+     ; 
+    
+    
+      
+
+// Riconosco il simbolo di un pre tag      
+precodeS::=      STARTPRE;
+		
+
+precode ::=	  precodeS textG:t {:RESULT =(String)t+"\n"; :}
+      |	          precode:pre precodeS textG:t  {: RESULT=pre+(String)t; :}  
+      ; 
+
+                 //Nel file di ingresso è ammessa una sola lista o  un solo tag-pre
+temp ::=         orederedLI:oli {: RESULT= parser.closeOL((String)oli,new String("")); :} 
+      |          unorderedLI:uoli {: RESULT=parser.closeUOL((String)uoli,new String("")); :} 
+      |          precode:pre {: RESULT= parser.closePreCode((String)pre,new String("")); :}
+      ;
+     
+      
+text2::=        text {: parser.htmlOutput.append("\n"); :}
+      |         temp:tp {: parser.htmlOutput.append("\n");  parser.htmlOutput.append(tp);  parser.htmlOutput.append("\n"); :}
+      |         text2 temp:tp {: parser.htmlOutput.append("\n"); parser.htmlOutput.append(tp);  parser.htmlOutput.append("\n"); :}
+      |         text2 text {: parser.htmlOutput.append("\n"); :}       
+      ;
+
+
+
+
+                               /*****NEW LANGUAGE****/
+
+
+
+name::= 
+		ID_NAME:nam {: parser.sD("ID_NAME-->name"); RESULT=nam; :} //stringa di testo
+		| VALUE:val {: parser.sD("VALUE-->name"); RESULT=val; :}
+		| BOOL_VALUE:bool {: parser.sD("BOOL_VALUE-->name"); RESULT=bool; :}
+		| FLOAT_VALUE:fl {: parser.sD("FLOAT_VALUE-->name"); RESULT=fl; :}
+		;
+
+
+		
+//Passaggio intermedio per il Riconoscimento-tipo
+type::=
+			primitive_type:type {: parser.sD("type"); RESULT=type; :}
+		;
+                        
+//Riconoscimento tipo- Passo a livello superiore(RESULT) l'oggetto Type associato alla chiave definita nell'hash _Type - ciò tramite le funzioni Type.**
+primitive_type::=
+			INT {: RESULT = Type.integer(); parser.sD("primitive_type");:}
+		|	CHAR {: RESULT = Type.character(); :}
+		| 	FLOAT {:RESULT = Type.floating(); :}
+                        //NUOVI
+                |       STRING_TYPE {: RESULT = Type.string(); :}
+                |       BOOLEAN   {: RESULT = Type.bool(); :}
+                
+                ;
+
+                
+// Singola variabile-nome , multipla variabile-nome	
+vars::= 
+			var_id:name {: parser.sD("vars");
+			//Recupero il valore della variabile e lo assegno a una variabile Type	
+                        Type type = (Type)((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).value;
 			
-spaceList ::= SPACE {: RESULT= new String(" "); :}
-			| spaceList:sl SPACE {: RESULT= new String(sl+" ");   :} ;			
+                        //Memorizzo il nome della variabile (key) e l'oggetto type ad essa associata nell'hash "table"	
+                    //    parser.sD("NOME VARIABILE: "+(String)name + "  TIPO: "+type.display());
+                        Enviroment.put((String)name,new Symb(type));
+                        RESULT = name;
+                          
+			:}
+		
+                        //variabile1 virgola variabile2
+                |	vars COMMA var_id:name {: parser.sD("Multiple vars"); 
+			Type type = (Type)((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)).value;
+			//parser.sD("NOME VARIABILE: "+(String)name);
+                        Enviroment.put((String)name,new Symb(type));
+                        RESULT = name;
+                     
+                  
+		:}
+		;
+                
+                
 
-textString::= 
-			STRING:s {: RESULT=s; :}
-	| 		textString:s1 LITCHAR:l STRING:s2 {: RESULT=(s1+l.toString()+s2); :} 
-	|		textString:s1 newlineSingle:nls STRING:s2 {: RESULT=s1+(String)nls+s2; :}  
-//	|		textString:s3 newlineList:nll STRING:s4 {: RESULT=(s3+(String)nll+s4); :} 	
-//	|		textString:s5 spaceList:sl STRING:s6 {: RESULT=(s5+(String)sl+s6); :} 	
+//Riconosco la variabile-nome                 
+var_id::= 
+			ID_NAME:name {: parser.sD("var_id"); RESULT=name; :}
+	//	|	var_id SQUAREBRACKETO SQUAREBRACKETC  {: parser.sD("var_id SQUAREBRACKETO SQUAREBRACKETC-->var_id"); :}
+		;
+
+ 
+
+declarations::=         //Dichiarazioni variabili        
+			type vars:variable SEMICOLON {: parser.sD("declarations");  
+                        
+                       //Memorizzo nella symbolo table che la variabile non è un array
+                       String nameVars=((String)((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).value);
+                      // System.out.println("                           **Recuperata il valore della variabile: "+nameVars);
+                       Enviroment.updateIsArray(nameVars,false);                          
+                      :}
+                        
+                        
+                        //Dichiarazione array
+              |        type vars SQUAREBRACKETO VALUE:val SQUAREBRACKETC SEMICOLON {: parser.sD("declarations: Array"); 
+                       String nameVars=((String)((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).value);
+                     //  System.out.println("                          **Recuperata il valore della variabile: "+nameVars);
+                       Enviroment.updateIsArray(nameVars,true);                          
+                       Enviroment.updateDimensionArray(nameVars,(int)val);                          
+                        
+                      :}
+                
+               
+              
+                        //Gestione degli errori
+          //   |         error {: parser.report_error("Error","WRONG"); :} SEMICOLON {:parser.sD("Error: Error SEMICOLON");:}
+              ;
+                   
+
+                
+//Dichiarazione multiple	
+declarationsMul::= declarations type vars SEMICOLON {: parser.sD("declarations"); 
+                     
+                      //Memorizzo nella symbolo table che la variabile non è un array
+                       String nameVars=((String)((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).value);
+                      // System.out.println("                               **Recuperata il valore della variabile: "+nameVars);
+                       Enviroment.updateIsArray(nameVars,false); 
+                      :}
+               
+                  | declarations type vars SQUAREBRACKETO VALUE:val SQUAREBRACKETC SEMICOLON {: parser.sD("declarations: Array"); 
+                       String nameVars=((String)((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).value);
+                      // System.out.println("                             **Recuperata il valore della variabile: "+nameVars);
+                       Enviroment.updateIsArray(nameVars,true);   
+                       Enviroment.updateDimensionArray(nameVars,(int)val);  
+                      :}
+                
+
+                  |  declarationsMul declarations {: parser.sD("declarations"); :} ;
+      
+                
+
+
+
+
+
+
+                        
+//Valori di inizializzazione di un'array di stringhe(quelli dentro le parentesi graffe)                       
+multipleStringValues::=       //es "Pippo"       
+                          MARKS ID_NAME:val MARKS  {: parser.sD("StringValues");  RESULT=val; :}
+                   
+                        // es. "Pippo","Pio",..
+                       |   multipleStringValues:mul COMMA MARKS ID_NAME:val MARKS  {: parser.sD("multipleStringValues"); RESULT=mul+","+val+","; :}  
+                       ;
+
+                       
+//Valori di inizializzazione di un'array di interi(quelli dentro le parentesi graffe)                 
+multipleIntValues::=   //es. 2 
+                        VALUE:val {: parser.sD("IntValues"); RESULT=Integer.toString(val)+","; :}          
+                      //es, 1,1,..
+                 |       multipleIntValues:mul COMMA VALUE:val {: parser.sD("multipleIntValues");RESULT=mul+Integer.toString(val)+",";  :}
+                 ;
+
+ //Valori di inizializzazione di un'array di float(quelli dentro le parentesi graffe)                 
+multipleFloatValues::=   //es. 2.1 
+                         FLOAT_VALUE:val {: parser.sD("FlaotValues"); RESULT=String.valueOf(val)+","; :}          
+                      //es, 1.2,1.3,..
+                 |       multipleFloatValues:mul COMMA  FLOAT_VALUE:val {: parser.sD("multipleFloatValues");RESULT=mul+String.valueOf(val)+",";  :}
+                 ;         
+                 
+ //Assegnazioni singole e multiple      NB. questi valori devono essere salvati nell'hashmap Enviroment.table con verifica del nome e del tipo dato assegnato          
+assign::= 
+                //Assegnazione a interi
+		ID_NAME:name EQUAL VALUE:val SEMICOLON {: parser.sD("Int assign"); 
+                  parser.expressionValue=Enviroment.getResultExpression();
+                  if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                    Enviroment.updateInt((String)name,(int)val);
+                  }
+                    
+                  //Se l'ultimo elemento delle lista è diveso da true
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  
+                  //Se ho un while
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                        Enviroment.generateInstruction((String)name+"="+":"+val+";");
+                  if(parser.controlWhile!=true || parser.expressionValue!=true)
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :}    
+                   
+                   
+                      
+                   
+                   
+                
+        |       assign ID_NAME:name EQUAL VALUE:val SEMICOLON {: parser.sD(" Int assign"); 
+                  parser.expressionValue=Enviroment.getResultExpression();
+                  if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                    Enviroment.updateInt((String)name,(int)val);
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                        Enviroment.generateInstruction((String)name+"="+":"+val+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :}    
+                      
+                //Assegnazione a float
+        |	ID_NAME:name EQUAL FLOAT_VALUE:val SEMICOLON {: parser.sD("Float assign"); 
+                parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                   Enviroment.updateFloat((String)name,val);
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                        Enviroment.generateInstruction((String)name+"="+":"+val+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :}     
+          
+                   
+        |        assign ID_NAME:name EQUAL FLOAT_VALUE:val SEMICOLON {: parser.sD(" Float assign");
+                 parser.expressionValue=Enviroment.getResultExpression(); 
+                 if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                   Enviroment.updateFloat((String)name,val);
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                        Enviroment.generateInstruction((String)name+"="+":"+val+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :}  
+                  
+       
+                //Assegnazione a char
+        |       ID_NAME:name EQUAL CHAR_VALUE:val SEMICOLON {: parser.sD("Char assign");  
+                parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                   Enviroment.updateChar((String)name,(String)val); 
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                        Enviroment.generateInstruction((String)name+"="+val+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :}  
+        
+        
+        |       assign ID_NAME:name EQUAL CHAR_VALUE:val SEMICOLON {: parser.sD(" Char assign"); 
+                 parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                   Enviroment.updateChar((String)name,(String)val); 
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                        Enviroment.generateInstruction((String)name+"="+val+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :}  
+              
+                  
+               
+                  
+                  
+                //Assegnazione a booleani
+        |       ID_NAME:name EQUAL BOOL_VALUE:val SEMICOLON {: parser.sD("Boolean assign"); 
+                 parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                    Enviroment.updateBool((String)name,(boolean)val);  
+                  }
+                   if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                         Enviroment.generateInstruction((String)name+"="+val+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :}     
+                
+        |       assign ID_NAME:name EQUAL BOOL_VALUE:val SEMICOLON {: parser.sD(" Boolean assign"); 
+                 parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                    Enviroment.updateBool((String)name,(boolean)val);  
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                         Enviroment.generateInstruction((String)name+"="+val+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :}     
+                  
+                  
+                  
+            
+                //Assegnazione a String e array di char
+        |       ID_NAME:name EQUAL MARKS ID_NAME:val MARKS SEMICOLON {: parser.sD("Char Array assign or String assing"); 
+                  parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                    Enviroment.updateStringAndArrayChar((String)name,(String)val); 
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                         Enviroment.generateInstruction((String)name+"="+"\""+val+"\""+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :}    
+                  
+        |       assign ID_NAME:name EQUAL MARKS ID_NAME:val MARKS SEMICOLON {: parser.sD(" Char Array assign or String assign"); 
+                  parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                    Enviroment.updateStringAndArrayChar((String)name,(String)val); 
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                         Enviroment.generateInstruction((String)name+"="+"\""+val+"\""+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :}    
+          
+          
+        
+        
+               // Inizializzazione array di stringhe  
+        |       ID_NAME:name EQUAL LEFTBRACE multipleStringValues:multipleValues RIGHTBRACE SEMICOLON {: parser.sD("String Array assign"); 
+                  parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                    System.out.println("                         Value letti: "+multipleValues);
+                    Enviroment.updateArrayString((String)name,(String)multipleValues,"not");  
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                         Enviroment.generateInstruction((String)name+"="+"{"+multipleValues+"}"+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :}   
+                   
+                   
+        |       assign ID_NAME:name EQUAL LEFTBRACE multipleStringValues:multipleValues RIGHTBRACE SEMICOLON {: parser.sD("String Array assign"); 
+                  parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                    System.out.println("                         Value letti: "+multipleValues);
+                    Enviroment.updateArrayString((String)name,(String)multipleValues,"not");  
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                         Enviroment.generateInstruction((String)name+"="+"{"+multipleValues+"}"+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :}   
+
+                          
+      
+          
+             //Inizializzazione array di interi 
+        |       ID_NAME:name EQUAL LEFTBRACE multipleIntValues:multipleValues RIGHTBRACE SEMICOLON {: parser.sD("Int Array assign"); 
+                 parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                    System.out.println("                         Value letti: "+multipleValues);
+                    Enviroment.updateArrayInt((String)name,(String)multipleValues,"not");   
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                         Enviroment.generateInstruction((String)name+"="+"{"+":"+multipleValues+"}"+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :}          
+        
+        |       assign ID_NAME:name EQUAL LEFTBRACE multipleIntValues:multipleValues RIGHTBRACE SEMICOLON {: parser.sD("Int Array assign"); 
+                 parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                    System.out.println("                         Value letti: "+multipleValues);
+                    Enviroment.updateArrayInt((String)name,(String)multipleValues,"not");   
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                         Enviroment.generateInstruction((String)name+"="+"{"+":"+multipleValues+"}"+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :}          
+                  
+                          
+                  
+             
+              //Inizializzazione array di float
+        |       ID_NAME:name EQUAL LEFTBRACE multipleFloatValues:multipleValues RIGHTBRACE SEMICOLON {: parser.sD("Float Array assign"); 
+                  parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                    System.out.println("                         Value letti: "+multipleValues);
+                    Enviroment.updateArrayFloat((String)name,(String)multipleValues,"not");   
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                         Enviroment.generateInstruction((String)name+"="+"{"+":"+multipleValues+"}"+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :} 
+                   
+        |       assign ID_NAME:name EQUAL LEFTBRACE multipleFloatValues:multipleValues RIGHTBRACE SEMICOLON {: parser.sD("Float Array assign"); 
+                  parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                    System.out.println("                         Value letti: "+multipleValues);
+                    Enviroment.updateArrayFloat((String)name,(String)multipleValues,"not");   
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                         Enviroment.generateInstruction((String)name+"="+"{"+":"+multipleValues+"}"+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :} 
+        
+        
+                  
+ 
+                //Aggiornamento-Inizializzazione di un valore dell'array di Stringhe
+        |       ID_NAME:name SQUAREBRACKETO VALUE:value SQUAREBRACKETC EQUAL ID_NAME:val SEMICOLON  {: parser.sD("String Array single assign"); 
+                 parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                    System.out.println("                        Single Value letti: "+val+" posizion: "+value);
+                  Enviroment.updateArrayString((String)name,(String)val,Integer.toString(value));   
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                         Enviroment.generateInstruction((String)name+"["+value+"]="+val+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :}  
+                   
+        |       assign ID_NAME:name SQUAREBRACKETO VALUE:value SQUAREBRACKETC EQUAL ID_NAME:val SEMICOLON  {: parser.sD("String Array single assign"); 
+                 parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                    System.out.println("                        Single Value letti: "+val+" posizion: "+value);
+                  Enviroment.updateArrayString((String)name,(String)val,Integer.toString(value));   
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                         Enviroment.generateInstruction((String)name+"["+value+"]="+val+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :} 
+                  
+                  
+                   
+                
+                
+                
+              //Aggiornamento-Inizializzazione di un valore dell'array di interi
+
+        |       ID_NAME:name SQUAREBRACKETO VALUE:value SQUAREBRACKETC EQUAL VALUE:val SEMICOLON {: parser.sD("Int Array single assign");          
+                parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                   System.out.println("                      Single Value letto: "+val+" posizion: "+value);
+                  Enviroment.updateArrayInt((String)name,Integer.toString(val),Integer.toString(value));    
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                          Enviroment.generateInstruction((String)name+"["+value+"]="+":"+val+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :} 
+                   
+        |       assign  ID_NAME:name SQUAREBRACKETO VALUE:value SQUAREBRACKETC EQUAL VALUE:val SEMICOLON {: parser.sD("Int Array single assign");          
+                parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                   System.out.println("                      Single Value letto: "+val+" posizion: "+value);
+                  Enviroment.updateArrayInt((String)name,Integer.toString(val),Integer.toString(value));    
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                          Enviroment.generateInstruction((String)name+"["+value+"]="+":"+val+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :} 
+                  
+                  
+        
+              //Aggiornamento-Inizializzazione di un valore dell'array di float
+
+        |       ID_NAME:name SQUAREBRACKETO VALUE:value SQUAREBRACKETC EQUAL FLOAT_VALUE:val  SEMICOLON {: parser.sD("float Array single assign");          
+                parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                  System.out.println("                      Single Value letto: "+val+" posizion: "+value);
+                  Enviroment.updateArrayFloat((String)name,String.valueOf(val),Integer.toString(value));    
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                          Enviroment.generateInstruction((String)name+"["+value+"]="+":"+val+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :} 
+                   
+                   
+        |       assign  ID_NAME:name SQUAREBRACKETO VALUE:value SQUAREBRACKETC EQUAL FLOAT_VALUE:val  SEMICOLON {: parser.sD("float Array single assign");          
+                parser.expressionValue=Enviroment.getResultExpression();
+                if(parser.expressionValue==true)
+                  {
+                    //Effettuo l'assegnazione aggiornando la SymbolTable 
+                  System.out.println("                      Single Value letto: "+val+" posizion: "+value);
+                  Enviroment.updateArrayFloat((String)name,String.valueOf(val),Integer.toString(value));    
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                          Enviroment.generateInstruction((String)name+"["+value+"]="+":"+val+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true )
+                     System.out.println("instruction not insert in while list"); 
+                  if(parser.expressionValueWhile!=true)
+                    System.out.println("Assing not made - while control false"); 
+                  :} 
+                
+         //Increment       
+        |    ID_NAME:name PLUS PLUS   SEMICOLON  {: parser.sD("Increment"); 
+                parser.expressionValue=Enviroment.getResultExpression();
+                  if(parser.expressionValue==true && parser.expressionValueWhile==true)
+                  {
+                     System.out.println("                   Variable incremented: "+name);
+                     Enviroment.addone((String)name);  
+                    
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                        Enviroment.generateInstruction((String)name+"++"+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true ||  parser.expressionValueWhile!=true)
+                     System.out.println("Assing not made and instruction not insert in while list- control false"); 
+                  :}
+          
+          
+         //Increment
+         |    assign ID_NAME:name PLUS PLUS  SEMICOLON  {: parser.sD("Increment"); 
+              parser.expressionValue=Enviroment.getResultExpression();
+                  if(parser.expressionValue==true && parser.expressionValueWhile==true)
+                  {
+                     System.out.println("                   Variable incremented: "+name);
+                     Enviroment.addone((String)name);  
+                    
+                  }
+                   if(parser.controlWhile==true  && parser.expressionValueWhile==true)
+                        Enviroment.generateInstruction((String)name+"++"+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true ||  parser.expressionValueWhile!=true)
+                     System.out.println("Assing not made and instruction not insert in while list- control false"); 
+                  :}      
+                  
+                  
+
+          //Decrement     
+        |    ID_NAME:name MINUS MINUS SEMICOLON  {: parser.sD("Decrement"); 
+              parser.expressionValue=Enviroment.getResultExpression();
+                  if(parser.expressionValue==true)
+                  {
+                     System.out.println("                   Variable incremented: "+name);
+                     Enviroment.subone((String)name);   
+                    
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                        Enviroment.generateInstruction((String)name+"--"+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true ||  parser.expressionValueWhile!=true )
+                     System.out.println("Assing not made and instruction not insert in while list- control false"); 
+                  :}
+          
+         
+         //Decrement
+         |    assign ID_NAME:name MINUS MINUS  SEMICOLON  {: parser.sD("Decrement"); 
+             parser.expressionValue=Enviroment.getResultExpression();
+                  if(parser.expressionValue==true)
+                  {
+                     System.out.println("                   Variable incremented: "+name);
+                     Enviroment.subone((String)name);   
+                    
+                  }
+                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                        Enviroment.generateInstruction((String)name+"--"+";");
+                  if(parser.expressionValue!=true) 
+                     System.out.println("Assing not made - control false"); 
+                  if(parser.controlWhile!=true ||  parser.expressionValueWhile!=true )
+                     System.out.println("Assing not made and instruction not insert in while list- control false"); 
+                  :}  
+
+         //La funzione : - La funzione puo essere usata sia fuori che dentro i tag <? ?> cosi come ogni assegnazione..
+          |  FUNCTION  ROUNDBRACKETO  input1:val1 SEMICOLON  input2:val2 SEMICOLON  input3:val3 ROUNDBRACKETC SEMICOLON {: parser.sD("FUNCTION");
+                     parser.expressionValue=Enviroment.getResultExpression();
+                     if(parser.expressionValue==true)
+                     {
+                       System.out.println("YYYYYYYYYYYYY1--->"+parser.expressionValue);
+                       parser.htmlOutput.append((String)Enviroment.ExecutionFunction(val1.toString(),val2.toString(),val3.toString()));   
+                     } 
+                     else
+                        System.out.println("Y1Non eseguita--->"+parser.expressionValue); 
+                      if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                     {
+                       //Creo un resultValue associato alla funzione.
+                        System.out.println("                   execute function-instruction ");
+                        Enviroment.generateFunctionInstruction((String)val1,(String)val2,(String)val3);
+                     }
+                     if(parser.expressionValue!=true) 
+                       System.out.println("function not made - control false"); 
+                     if(parser.controlWhile!=true ||  parser.expressionValueWhile!=true )
+                       System.out.println("function not made and instruction not insert in while list- control false"); 
+                  :}  
+          
+          |  assign   FUNCTION  ROUNDBRACKETO  input1:val1 SEMICOLON  input2:val2 SEMICOLON  input3:val3 ROUNDBRACKETC SEMICOLON {: parser.sD("FUNCTION");
+                     parser.expressionValue=Enviroment.getResultExpression();
+                     if(parser.expressionValue==true)
+                     {
+                       System.out.println("YYYYYYYYYYYYY2--->"+parser.expressionValue);
+                       parser.htmlOutput.append((String)Enviroment.ExecutionFunction(val1.toString(),val2.toString(),val3.toString()));   
+                     } 
+                      else
+                        System.out.println("Y2Non eseguita--->"+parser.expressionValue); 
+                      if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                     {
+                       //Creo un resultValue associato alla funzione.
+                        System.out.println("                   execute function-instruction ");
+                        Enviroment.generateFunctionInstruction((String)val1,(String)val2,(String)val3);
+                     }
+                     if(parser.expressionValue!=true) 
+                       System.out.println("function not made - control false"); 
+                     if(parser.controlWhile!=true ||  parser.expressionValueWhile!=true )
+                       System.out.println("function not made and instruction not insert in while list- control false"); 
+                  :} 
+          ;
+
+//La frase HTML
+input1::= ID_NAME:val {: RESULT=val; :}
+  |       input1:ipt1 ID_NAME:val {: RESULT=ipt1+" "+val; :}
+   ;                
+
+//La variabile interessata.  
+input2::=  ID_NAME:val {: RESULT=val; :} 
+  |        ID_NAME:val SQUAREBRACKETO VALUE:value SQUAREBRACKETC {: RESULT=val+"["+value+"]"; :} 
+;
+
+//Lo stile/struttura HTML di output
+input3::=  ID_NAME:val {: RESULT=val; :} 
+;
+
+                
+//combinazione dichiarazione assegnamento        
+union::=    
+              declarations assign {: :}   
+      |       declarationsMul assign {: :}  
+      |       declarations {: Enviroment.printAll(); :}
+      |       declarationsMul {: Enviroment.printAll(); :}
+      |       assign {: Enviroment.printAll(); :}
+      ;
+            
+//Prima combinazione tra html e newLanguage (Assengnazione e dichiarazioni ONLY)     
+fusion::= union {: Enviroment.printAll(); :}
+        | text2 
+        | fusion union {: Enviroment.printAll(); :}
+        | fusion text2
+        
+        ;                
+                        
+//if statement
+        
+//Dentro le parentesi graffe del costrutti del linguaggio sono ammesse solamente assegnazioni a variabili
+block::= 
+      //  LEFTBRACE block_sts_opt RIGHTBRACE {: parser.sD("LEFTBRACE block_sts_opt RIGHTBRACE-->block"); :}
+        LEFTBRACE block_sts RIGHTBRACE {: 
+                                             if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                                                            { 
+                                                              //Genero un oggetto che segnali la chiusura delle parentisi graffe
+                                                              Enviroment.generateRightbrace(parser.count);
+                                                            }           
+                                          parser.sD("LEFTBRACE block_sts_opt RIGHTBRACE-->block"); 
+                                           
+                                          //Elimino dalla lista i valore dell'espressione appena chiudo una }
+                                            Enviroment.deleteResultExpression();                                                            
+                                           //expressionValue deve essere true chiusa un }, per eseguire istruzioni fuori da costrutti
+                                          parser.expressionValue=(boolean)true;
+                                     :}
+                                
+    |   LEFTBRACE  RIGHTBRACE  {: parser.sD("LEFTBRACE Empty RIGHTBRACE-->block");
+                                    if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                                                            { 
+                                                              //Genero un oggetto che segnali la chiusura delle parentisi graffe
+                                                              Enviroment.generateRightbrace(parser.count);
+                                                            }   
+
+                                                            //Elimino dalla lista i valore dell'espressione appena chiudo una }
+                                                            Enviroment.deleteResultExpression();                                                            
+                                                            //expressionValue deve essere true chiusa un }, per eseguire istruzioni fuori da costrutti
+                                                            parser.expressionValue=(boolean)true;                                                            
+                              :}
+    |   LEFTBRACE assign RIGHTBRACE {: parser.sD("LEFTBRACE assign RIGHTBRACE-->block"); 
+                                                             if((parser.controlWhile==true && parser.expressionValueWhile==true) || (parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true))
+                                                            { 
+                                                              //Genero un oggetto che segnali la chiusura delle parentisi graffe
+                                                              Enviroment.generateRightbrace(parser.count);
+                                                            }
+
+                                                            //Elimino dalla lista i valore dell'espressione appena chiudo una }
+                                                            Enviroment.deleteResultExpression();                                                            
+                                                            //expressionValue deve essere true chiusa un }, per eseguire istruzioni fuori da costrutti
+                                                            parser.expressionValue=(boolean)true;  
+                                                            
+                                                            Enviroment.printAll();
+                                :}
+    //   |         error {: parser.report_error("Error","WRONG"); :} RIGHTBRACE {:parser.sD("Error: Error SEMICOLON");:}
+    ;
+
+    
+//Seconda combinazione tra html e newLanguage 
+finalFusion::=  block_sts_opt
+      |         fusion         
+    
+      |         finalFusion fusion
+      |         finalFusion block_sts_opt         
+       
+      |        finalFusion block_sts assign                             
+    ;
+    
+   //Quali casi si perdono, che problemi da eliminare qL'empty block_sts_opt ??!?!?! eliminandolo si puo definire la sequenza infinita di htnl e <? ?> 
+block_sts_opt	::=     	block_sts 		{: parser.sD("block_sts-->block_sts_opt"); :}
+                        |       block_sts_opt block_sts
+                        ;
+                        
+//Seconda com
+block_sts::=
+			block_st {: parser.sD("block_st--->block_sts"); :}
+		|	block_sts block_st {: parser.sD("block_sts block_st--->block_sts"); :}  
+		;
+block_st::=
+			statement {: parser.sD("statement--->block_st"); :}
+			
+		;
+		
+statement ::= 
+			st_w_ts		{: parser.sD("st_w_ts--->statement"); :}
+		|	if_then_st:ifr {: parser.sD("if_then_st--->statement");  :}
+		|	if_then_st:ifr ELSE {: 
+                                                boolean elseValue=Boolean.parseBoolean(ifr.toString());
+                                                Enviroment.insertResultExpression(!elseValue); 
+                                                System.out.println("SDASDSADASDA VALORE ELSE---->"+(!elseValue));
+                  :}
+                                  statement {: parser.sD("statement::=ELSE statement"); :}
+                                                   
+		|	while_st 	{: parser.sD("while_st--->statement"); :}
+		|       statement assign {: parser.sD("if_then_st--->statement"); :}
+                |       assign while_st {: parser.sD("while_st--->statement"); :}
+                |       assign if_then_st:ifr {: parser.sD("if_then_st--->statement");  :}
+                |	assign if_then_st:ifr ELSE {: 
+                  
+                                                boolean elseValue=Boolean.parseBoolean(ifr.toString());
+                                                 System.out.println("SDASDSADASDA222 VALORE ELSE---->"+(!elseValue));
+                                                Enviroment.insertResultExpression(!elseValue); 
+                                  
+                                    
+                                    if(parser.controlWhile==true && parser.expressionValueWhile==true)
+                                                  { 
+                                                    //Segnalo che l'espressione è associata a un while
+                                                    
+                                                    Enviroment.generateInstruction("else");
+                                                  }
+                                                  :}
+                                                  
+                                                  statement {: parser.sD("statement::=ELSE statement"); 
+                                    :}
+                
+                ;
+		
+st_w_ts::=              block {: parser.sD("block--->st_w_ts"); :}
+                |       block assign{: parser.sD("block--->st_w_ts + assign"); :}
+                  
+        ;
+
+
+
+
+
+		
+if_then_st ::= IF ROUNDBRACKETO expression:e {:  ResultValue point=(ResultValue)e;
+                                                
+                                                //Recupero l'ultimo expr-value dalla lista per vedere se è un if annidato
+                                                if(Enviroment.getResultExpression()==true)
+                                                {
+                                                  //Inserisco nella lista dei valori delle espressioni, true o false
+                                                  Enviroment.insertResultExpression(point.getControlValue());
+                                                   //Salgo il risultato: true/false dell'espressione dell'if. potrebbe servirmi nell'else
+                                                  RESULT=point.getControlValue();
+                                            
+                                                }
+                                                //Se l'if padre è false non aggiorno la lista dell;
+                                                else
+                                                {
+                                                  System.out.println("L'if considerato e un if annidato a un if false");
+                                                  //Inserisco false nelle lista delle espressioni
+                                                  Enviroment.insertResultExpression(false);
+                                                  //Salgo il risultato: true/false dell'espressione dell'if. potrebbe servirmi nell'else
+                                                  RESULT=true; //Cosi l'else sarà FALSE;
+                                                }
+                                                 
+                                                
+                                                  //Verifiche relative alla presenza di while
+                                                  if(parser.controlWhile==true && parser.expressionValueWhile==true)
+                                                  { 
+                                                    //Segnalo che l'espressione è associata a un while
+                                                    point.setName("f");
+                                                    Enviroment.addList(point,-1);
+                                                  }
+                                                  else
+                                                    System.out.println("Nessun while ATTIVO");
+                                                  
+                                           :}  
+                                           ROUNDBRACKETC statement {: parser.sD("if_then_st::=IF ROUNDBRACKETO express ROUNDBRACKETC statement"); 
+                                                                      
+                                                                     
+                                             :}
 	;
 
+//end if statement
+
+                                
+while_st::=  WHILE {: if(parser.count==0)
+                          parser.controlWhile=true; 
+                      parser.count++; 
+                   :} ROUNDBRACKETO expression:e {: ResultValue point=(ResultValue)e;
+                                                    if(parser.count==1)
+                                                    {
+                                                      //Setto la varibile expressionValue perche il while deve essere memorizzato in lista solo se la condizione e true
+                                                      parser.expressionValueWhile=point.getControlValue();       
+                                                    }
+                                                    
+                                                    //Recupero l'ultimo expr-value dalla lista per vedere se è un while annidato
+                                                    if(Enviroment.getResultExpression()==true)
+                                                    {
+                                                      //Inserisco nella lista dei valori delle espressioni, true o false
+                                                      Enviroment.insertResultExpression(point.getControlValue());
+                                                    }
+                                                     else
+                                                    {
+                                                        System.out.println("Il while considerato e un while annidato a un costrutto- false");
+                                                        //Inserisco false nelle lista delle espressioni
+                                                        Enviroment.insertResultExpression(false);
+                                                        parser.expressionValueWhile=false;
+                                                    }
+                                                    
+                                                    //Memorizzo l'espressione/condizione solo se si tratta di un while e l'espressione è vera
+                                                    if(parser.controlWhile==true && parser.expressionValueWhile==true && Enviroment.getResultExpression()==true)
+                                                    {   
+                                                      //Segnalo che l'espressione è associata a un while
+                                                      point.setName("w");
+                                                      Enviroment.addList(point,parser.count);
+                                                    }
+                                                    
+                                                    
+                                       :}  ROUNDBRACKETC statement {: 
+                                                                        parser.sD("WHILE ROUNDBRACKETO expression ROUNDBRACKETC statement-->while_st"); 
+                                                                        
+                                                                         
+                                                                        
+                                                                          if(parser.count==1)
+                                                                          {
+                                                                           System.out.println("***********************************************WhilePrincipale rieseguito!- count: " +parser.count);
+                                                                            
+                                                                             parser.htmlOutput.append(Enviroment.ExecutionWhile());  
+                                                                            //Riporto il flag a false, eseguito il while
+                                                                            parser.controlWhile=false;
+                                                                            parser.count--;
+                                                                          }
+                                                                          else
+                                                                          {
+                                                                            //  System.out.println("oioioioiooioioioio");
+                                                                              ResultValue point=(ResultValue)e;
+                                                                              if(parser.controlWhile==true && parser.expressionValueWhile==true && parser.expressionValue==true)
+                                                                              {   
+                                                                                 parser.htmlOutput.append(Enviroment.ExecutionWhileIn((ResultValue)point));
+                                                                              }
+                                                                              parser.count--;
+                                                                          }
+                                                                    :}
+                                                              ;
 
 
-italico1 ::= 
-		STAR textString:s STAR {: System.out.printf("Rule Italico1 found [%s]\n",s);
-		parser.htmlOutput.append("<em>"+s+"</em>");	
-		 :};
-		
+//conditional
+postfix_exp ::=  name:nam                                      {: parser.sD("name-->postfix_exp");  RESULT=nam; :} //count
+	;
+//-3 !3 +3 		
+unary_exp::=
+			postfix_exp:pe                                {: parser.sD("postfix_exp-->unary_exp");  RESULT=Enviroment.GenerateResultValue(pe); :} // 3
+		|	MINUS unary_exp:un                            {: parser.sD("MINUS unary_exp-->unary_exp");  RESULT=Enviroment.GenerateResultValue("-",un); :} //	-3
+		|	NOT unary_exp:un                              {: parser.sD("NOT unary_exp-->unary_exp"); RESULT=Enviroment.GenerateResultValue("!",un); :}		//	!3
+		|	PLUS unary_exp:un                             {: parser.sD("PLUS unary_exp-->unary_exp"); RESULT=Enviroment.GenerateResultValue("+",un); :}	//	+3
+		;
+
+//before the the add exp for the priority
+//3*2+5
+mult_exp::=
+			unary_exp:ue 	                                {: parser.sD("unary_exp-->mult_exp");  RESULT=ue; :}		//	-3
+		|	mult_exp:mu DIV unary_exp:ue 			{: parser.sD("mult_exp	DIV unary_exp-->mult_exp"); RESULT= Enviroment.GenerateResultValue(mu,"/",ue); :} // -3/+3
+		|	mult_exp:mu MULTIPLY unary_exp:ue 		{: parser.sD("mult_exp	MULTIPLY unary_exp-->mult_exp"); RESULT= Enviroment.GenerateResultValue(mu,"*",ue); :} // 3*2
+                ;
+
+add_exp::=
+			mult_exp:me					{: parser.sD("mult_exp-->add_exp"); RESULT=me; :}
+		|	add_exp:ae PLUS:pl mult_exp:me 			{: parser.sD("add_exp	PLUS mult_exp-->add_exp"); RESULT= Enviroment.GenerateResultValue(ae,"+",me); :} //3+3 3*3+2
+		|	add_exp:ae MINUS mult_exp:me 			{: parser.sD("add_exp MINUS mult_exp-->add_exp"); RESULT= Enviroment.GenerateResultValue(ae,"-",me); :} // 3-2  3/3-2
+		;
+
+//relational expr
+r_exp::=
+			add_exp:ae 					{: parser.sD("add_exp-->r_exp");  RESULT=ae; :}
+		|	r_exp:re LT add_exp:ae 		                {: parser.sD("r_exp LT add_exp-->r_exp"); RESULT= Enviroment.GenerateResultValue(re,"<",ae); :} // 3+2 > 3+6     !3>-3  3*2>2+3
+		|	r_exp:re LTEQ add_exp:ae 			{: parser.sD("r_exp LTEQ add_exp-->r_exp"); RESULT= Enviroment.GenerateResultValue(re,"<=",ae); :}
+		|	r_exp:re GT add_exp:ae 	                	{: parser.sD("r_exp GT add_exp-->r_exp");  RESULT= Enviroment.GenerateResultValue(re,">",ae); :}
+		|	r_exp:re GTEQ add_exp:ae 			{: parser.sD("r_exp GTEQ add_exp-->r_exp"); RESULT= Enviroment.GenerateResultValue(re,"=>",ae); :}
+		;                               
+//equal expr                            
+eq_exp::=	                            
+			r_exp:re					{: parser.sD("r_exp-->eq_exp"); RESULT=re; :}
+		|	eq_exp:re1 EQ_EQ r_exp:re2			{: parser.sD("eq_exp	EQUAL_EQUAL r_exp-->eq_exp"); RESULT= Enviroment.GenerateResultValue(re1,"==",re2); :} // 3+2 == 3*5
+		|	eq_exp:re1 NOT_EQ r_exp:re2			{: parser.sD("eq_exp NOT_EQ r_exp-->eq_exp"); RESULT= Enviroment.GenerateResultValue(re1,"!=",re2); :}		// -3+2 != 3+2
+		;                               
+
+//AND before the OR for the priority
+and_exp::=	                            
+			eq_exp:eq 					{: parser.sD("eq_exp-->and_exp"); RESULT=eq; :}
+		|	and_exp:ae AND_AND eq_exp:ee 			{: parser.sD("and_exp AND_AND eq_exp-->and_exp"); RESULT=Enviroment.GenerateResultValue(ae,"&&",ee); :}   //3+2 == 3*5 && 
+		;                               
+                                        
+or_exp::=                               
+			and_exp:ae 					{: parser.sD("and_exp-->or_exp"); RESULT=ae; :}
+		|	or_exp:oe OR_OR and_exp:ae 				{: parser.sD("or_exp OR_OR and_exp-->cond_exp"); RESULT=Enviroment.GenerateResultValue(oe,"||",ae);  :}
+		;
+//3==2 ? 3=2 : 3+2 
+cond_exp::= 
+			or_exp:oe 					{: parser.sD("or_exp-->cond_exp"); RESULT=oe; :}
+		;
+
+
+ass_expression::= 
+			cond_exp:ce 					{: 	parser.sD("cond_exp-->ass_expression"); RESULT=ce; :}
+		;
+
+
+expression::= 
+			ass_expression:e					{: parser.sD("ass_expression->expression"); RESULT=e; :}
+		; 

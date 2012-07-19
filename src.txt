@@ -1,2 +1,30 @@
-*pip
-pno*
+<?
+int a;
+
+int x;
+boolean gg;
+int b;
+gg=false;
+a=0;
+
+b=4;
+
+if(a==0)
+{
+ a=6;
+ gg=true;
+ while(gg==true)
+ {
+   @function(stampo a;a;p);
+   a--;
+
+   b--;
+   x=1;
+   if(a==0 || b==x)
+   {
+     gg=false;
+   }
+ }
+
+}
+?>

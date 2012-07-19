@@ -1,0 +1,4 @@
+
+public enum Html_tag {
+	HEADER, PARAGRAPH, ORDEREDLIST, UNORDERLIST, PRECODE,HR ;
+}
